@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="filename" default=""/>
+    <arg name="lidar" default="222"/>
+    <node pkg="joy" name="joy_node" type="joy_node"/>
+    <node pkg="roomba_teleop_meiji" name="electric_joystick_drive" type="electric_joystick_drive"/>
+    <node pkg="roomba_500driver_meiji" name="roomba_500driver_meiji" type="main500" output="screen"/>
+    <node pkg="urg_node" name="urg_node" type="urg_node" args="_ip_address:=192.168.1.$(arg lidar)"/>
+    <node pkg="rosbag" name="record" type="record" args="-o /home/amsl/$(arg filename).bag /scan /tf /roomba/odometry"/>
+</launch>
