@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+    <node pkg="chibi22_a" name="localizer" type="localizer">
+        <param name="particle_number" value="100"/>
+        <param name="init_x" value="0.0"/>
+        <param name="init_y" value="0.0"/>
+        <param name="init_yaw" value="0.0"/>
+        <param name="init_x_sigma" value="0.5"/>
+        <param name="init_y_sigma" value="0.5"/>
+        <param name="init_yaw_sigma" value="0.5"/>
+        <param name="move_noise_ratio" value="0.0"/>
+    </node>
+    <node pkg="rosbag" name="rosbag" type="play" args="/home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
+    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
+</launch>
