@@ -18,12 +18,11 @@ DWA::DWA():private_nh("~"){
     private_nh.getParam("goal_tolerance", goal_tolerance);
 
     //subscriber
-    sub_local_goal = nh.subscribe("/local_goal", 1, &DWA::local_goal_callback, this);
-    sub_obstacle_poses = nh.subscribe("/obstacle_poses", 1, &DWA::obstacle_poses_callback, this);
+    local_goal_sub = nh.subscribe("/local_goal", 1, &DWA::local_goal_callback, this);
+    obstacle_poses_sub = nh.subscribe("/obstacle_poses", 1, &DWA::obstacle_poses_callback, this);
 
     //publisher
     roomba_control_pub = nh.advertise<roomba_500driver_meiji::RoombaCtrl>("/roomba/control", 1);
-
     local_paths_pub = nh.advertise<nav_msgs::Path>("local_paths", 1);
     best_local_path_pub = nh.advertise<nav_msgs::Path>("best_local_path", 1);
     local_goal_point_pub = nh.advertise<geometry_msgs::PointStamped>("local_goal_point", 1);
@@ -191,7 +190,6 @@ void LocalPathPlanner::roomba_ctrl(double speed, double yawrate)
     roomba_control.cntl.linear.x = speed;
     roomba_control.cntl.angular.z = yawrate;
     roomba_control_pub.publish(roomba_control);
-    
 }
 
 void LocalPathPlanner::visualize_trajectory(std::vector<State> &trajectory, ros::Publisher &publisher)
