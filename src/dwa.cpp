@@ -32,6 +32,7 @@ DWA::DWA():private_nh("~"){
     previous_input = {0.0, 0.0};
 }
 
+//callback func of local goal
 void DWA::local_goal_callback(const geometry_msgs::PoseStamped::ConstPtr &msg){
     local_goal = *msg;
 
@@ -51,6 +52,7 @@ void DWA::local_goal_callback(const geometry_msgs::PoseStamped::ConstPtr &msg){
     }
 }
 
+//callback func of obstacle pose
 void DWA::obstacle_poses_callback(const geometry_msgs::PoseArray::ConstPtr &msg){
     obstacle_poses = *msg;
     obstacle_poses_get_check = true;
@@ -170,8 +172,6 @@ std::vector<double> DWA::decide_input(){
         }
     }
     previous_input = input;
-    // std::cout << "h " << bhs << " d " << bds << " v " << bvs << std::endl;
-    // std::cout << "Input: " << input[0] << "  " << input[1] << std::endl;
     return input;
 }
 
