@@ -11,6 +11,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 
+
 struct State{
     double x;
     double y;
@@ -71,7 +72,6 @@ class DWA{
         ros::Publisher pub_best_local_path;
         ros::Publisher pub_local_paths;
         ros::Publisher pub_local_goal_point;
-
         geometry_msgs::PoseStamped local_goal;
         geometry_msgs::PointStamped local_goal_point;
         geometry_msgs::PoseArray obstacle_poses;
