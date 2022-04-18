@@ -60,4 +60,20 @@ void Local_map_creator::create_line(double yaw, double laser_range){
     if(laser_range <= roomba_radius || is_ignore_angle(yaw)){
         laser_range = map_size;
     }
+    for(double dist_from_start=0; dist_from_start < map_size; dist_from_start += search_step){
+        double x_now = dist_from_start * std::cos(yaw);
+        double y_now = dist_from_start * std::sin(yaw);
+        if(!check_map_range(x_now, y_now)){return;}
+        int map_index = xy_to_map_index(x_now, y_now);
+        if(dist_from_start >= laser_range){
+            local_map.data[map_index] = 100;
+            geometry_msgs::Pose obstacle_pose;
+            obstacle_pose.position.x = x_now;
+            obstacle_pose.position.y = y_now;
+            obstacle_pose.poses.push_back(obstacle_pose);
+            return;
+        } else {
+            local_map.data.[map_index] = 0;
+        }
+    }
 }
