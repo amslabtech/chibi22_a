@@ -9,6 +9,13 @@ project(chibi22_a)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  std_msgs
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
+  tf
+  tf2
+  roomba_500driver_meiji
 )
 
 ## System dependencies are found with CMake's conventions
@@ -101,8 +108,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES chibi22_a
+  INCLUDE_DIRS include
+  LIBRARIES chibi22_a
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
@@ -114,7 +121,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -122,6 +129,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/chibi22_a.cpp
 # )
+add_executable(local_map_creator src/local_map_creator.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -142,11 +150,13 @@ include_directories(
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(local_map_creator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(local_map_creator ${catkin_LIBRARIES})
 
 #############
 ## Install ##
