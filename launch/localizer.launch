@@ -4,5 +4,16 @@
     <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
 
+    <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
+        <param name="particle_number" value="1000" type="int"/>
+        <param name="hz" value="10" type="int"/>
+        <param name="init_x" value="0.0" type="double"/>
+        <param name="init_y" value="0.0" type="double"/>
+        <param name="init_yaw" value="0.0" type="double"/>
+        <param name="init_x_sigma" value="0.8" type="double"/>
+        <param name="init_y_sigma" value="0.8" type="double"/>
+        <param name="init_yaw_sigma" value="0.8" type="double"/>
+    </node>
+    <!-- <node pkg="rosbag" name="rosbag" type="play" args= "home/yoshiki/bagfiles/test1_2022-04-03-19-38-41.bag"/> -->
     <node pkg="rviz" name="rviz" type="rviz" args="-d$(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
 </launch>
