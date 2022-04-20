@@ -27,7 +27,9 @@ class Localizer
                 Localizer* mcl;
         };
 
+        // var
         int hz;
+        //map
         int particle_number;
         double init_x;
         double init_y;
@@ -36,20 +38,55 @@ class Localizer
         double init_y_sigma;
         double init_yaw_sigma;
         bool map_get_ok = false;
-        bool odometry_get_ok = false;
+        // odometry
         double move_noise_ratio;
+        bool odometry_get_ok = false;
+        // laser
+        double laser_noise_ratio;
+        int laser_step;
+        double alpha_slow_th;
+        double alpha_fast_th;
+        double alpha = 0;
+        double alpha_slow = alpha;
+        double alpha_fast = alpha;
+        double estimated_pose_w_th;
+        double reset_x_sigma;
+        double reset_y_sigma;
+        double reset_yaw_sigma;
+        double expansion_x_speed;
+        double expansion_y_speed;
+        double expansion_yaw_speed;
+        double reset_limit;
+        int reset_count = 0;
+        double search_range;
 
+
+        // callback
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg);
         void odometry_callback(const nav_msgs::Odometry::ConstPtr &msg);
+        void laser_callback(const sensor_msgs::LaserScan::ConstPtr &msg);
 
-        Particle make_particle();
+        // func
+        // map
         double gaussian(double mu, double sigma);
         double gaussian(double mu, double sigma, double x);
-        void create_p_pose_array_from_p_array(std::vector<Particle> &p_array);
         double adjust_yaw(double yaw);
+        Particle make_particle();
+        // odometry
         void motion_update();
-        std::vector<Particle> p_array;
+        // laser
+        int xy_to_map_index(double x, double y);
+        double dist_from_p_to_wall(double x_start, double y_start, double yaw, double laser_range);
+        double calc_w(geometry_msgs::PoseStamped &pose);
+        void normalize_w();
+        void estimate_pose();
+        void adaptive_resampling();
+        void expansion_reset();
+        void observation_update();
 
+        void create_p_pose_array_from_p_array(std::vector<Particle> &p_array);
+
+        // ros
         ros::NodeHandle private_nh;
         ros::NodeHandle nh;
         ros::Subscriber map_sub;
@@ -58,9 +95,16 @@ class Localizer
         ros::Publisher estimated_pose_pub;
         ros::Publisher p_pose_array_pub;
 
+        // map
         nav_msgs::OccupancyGrid map;
+        std::vector<Particle> p_array;
         geometry_msgs::PoseArray p_pose_array;
+        // odometry
         nav_msgs::Odometry current_odometry;
         nav_msgs::Odometry previous_odometry;
+        // laser
+        sensor_msgs::LaserScan laser;
+        geometry_msgs::PoseStamped estimated_pose;
+
 };
 #endif
