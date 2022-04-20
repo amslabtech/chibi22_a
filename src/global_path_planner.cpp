@@ -263,7 +263,6 @@ void AStarPath::A_star()
 
         while(!startpoint)
         {
-            //std::cout<<"while start!!"<<std::endl;
             //goal[i] indicate grid
             if(parent.x == goal[i].x && parent.y == goal[i].y)
             //whether parent is equl to real goal point or not
@@ -289,7 +288,7 @@ void AStarPath::A_star()
         std::reverse(checkpoint_path.poses.begin(),checkpoint_path.poses.end());
         global_path.header.frame_id = "map";            //rviz indicate this frame_id
         global_path.poses.insert(global_path.poses.end(), checkpoint_path.poses.begin(), checkpoint_path.poses.end());
-        std::cout<<"i="<<i<<" path :"<< checkpoint_path.poses.size()<<std::endl;
+        //std::cout<<"i="<<i<<" path :"<< checkpoint_path.poses.size()<<std::endl;
     }
     //std::cout<<"A*ok"<<std::endl;
 }
@@ -312,7 +311,6 @@ void AStarPath::process()
         }
         //std::cout<<"finish"<<std::endl;
         pub_path.publish(global_path);
-        //std::cout<<"aaaaaaaaaaaaaaaa"<<std::endl;
         ros::spinOnce();
         loop_rate.sleep();
     }
