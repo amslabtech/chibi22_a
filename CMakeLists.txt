@@ -125,7 +125,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
+## Declare a C++ libraryd
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/chibi22_a.cpp
 # )
@@ -140,7 +140,7 @@ add_executable(local_goal_creator src/local_goal_creator.cpp)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/chibi22_a_node.cpp)
+add_executable(global_path_planner  src/global_path_planner.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -153,11 +153,14 @@ add_executable(local_goal_creator src/local_goal_creator.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(local_map_creator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(local_goal_creator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(global_path_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(global_path_planner ${catkin_LIBRARIES})
 target_link_libraries(local_map_creator ${catkin_LIBRARIES})
 target_link_libraries(local_goal_creator ${catkin_LIBRARIES})
 
