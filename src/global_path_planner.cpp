@@ -269,18 +269,21 @@ void AStarPath::A_star()
             {
                 point.pose.position.x = (parent.x-row/2)*res;
                 point.pose.position.y = (parent.y-col/2)*res;
+                checkpoint_path.poses.push_back(point);
                 startpoint = true;
             }
             else
             {
                 point.pose.position.x = (parent.x-row/2)*res;
                 point.pose.position.y = (parent.y-col/2)*res;
+                checkpoint_path.poses.push_back(point);
                 //child.x = parent.x;
                 //child.y = parent.y;
                 //std::cout<<"child.x :"<<child.x<<std::endl;
                 //std::cout<<"child.y :"<<child.y<<std::endl;
                 parent.x = close_list[parent.x][parent.y].pre_x;
                 parent.y = close_list[parent.x][parent.y].pre_y;
+                
                 //std::cout<<"parent.x : "<<parent.x<<std::endl;
                 //std::cout<<"parent.y : "<<parent.y<<std::endl;
             }
@@ -288,7 +291,7 @@ void AStarPath::A_star()
         std::reverse(checkpoint_path.poses.begin(),checkpoint_path.poses.end());
         global_path.header.frame_id = "map";            //rviz indicate this frame_id
         global_path.poses.insert(global_path.poses.end(), checkpoint_path.poses.begin(), checkpoint_path.poses.end());
-        //std::cout<<"i="<<i<<" path :"<< checkpoint_path.poses.size()<<std::endl;
+        std::cout<<"i="<<i<<" path :"<< checkpoint_path.poses.size()<<std::endl;
     }
     //std::cout<<"A*ok"<<std::endl;
 }
