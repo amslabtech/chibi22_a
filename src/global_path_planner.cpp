@@ -34,6 +34,10 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
                 map_grid[i][j] = the_map.data[i+j*row];
             }
         }
+        
+        origin.x = the_map.info.origin.position.x;
+        origin.y = the_map.info.origin.position.y;
+        
         map_check = true;
     }
 }
@@ -58,9 +62,6 @@ void AStarPath::thick_wall()
                 }
             }
         }
-
-        count = 0;
-
         for(int  i=5; i<row-5; i++)
         {
             for(int j=5; j<col; j++)
@@ -105,20 +106,20 @@ void AStarPath::thick_wall()
 {
     if(!wall_checker)
     {
+        /*
         for(int i=0; i<row; i++)
         {
             for(int j=0; j<col; j++)
             {
-                //if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
                 if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
                 {
                    map_grid_copy[i][j] = map_grid[i][j];
                 }
             }
         }
+        */
 
-        count = 0;
-
+        //add wall
         for(int  i=5; i<row-5; i++)
         {
             for(int j=5; j<col; j++)
@@ -133,7 +134,6 @@ void AStarPath::thick_wall()
                     map_grid[i+2][j]=100;       //up+2
                     map_grid[i+2][j+1]=100;     //up+2, left+1
                     map_grid[i+2][j+2]=100;     //up+2, left+2
-
                     map_grid[i][j-1]=100;       //right+1
                     map_grid[i][j-2]=100;       //right+2
                     map_grid[i-1][j]=100;       //down+1
@@ -145,8 +145,11 @@ void AStarPath::thick_wall()
                 }
             }
         }
+
         //res is 0.05m
         res = the_map.info.resolution;
+        
+        //edit the_map.data (the_map.data mean 1D data , map_grid mean 2D data)
         for(int i=0; i<row; i++)
         {
             for(int j=0; j<col; j++)
@@ -225,19 +228,16 @@ void AStarPath::A_star()
             }
         }
 
-        //std::cout<<"setclose_list"<<std::endl
         gx = goal[i+1].x;   //gx is goal point
         gy = goal[i+1].y;   //gy is goal point
         x = goal[i].x;      //x is now point ( grid )
         y = goal[i].y;      //y is now point ( grid )
         g = 0;              //cost function
-        //std::cout<<"start_serchildng"<<std::endl;
 
         while(!resign)              //if !resign is ture // resign is false
         {
             if(x == gx && y == gy)  //if now point is goal point
             {
-                //std::cout<<"resign"<<std::endl;
                 resign = true;     //search finish
             }
             else                    //if now point is not goal point
