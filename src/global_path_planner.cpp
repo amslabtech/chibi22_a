@@ -21,12 +21,12 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
     else
     {
         the_map = *msg;
-        //change 1D the_map to 2D
-        row = the_map.info.height;
-        col = the_map.info.width;
+        row = the_map.info.height;          //row = 4000
+        col = the_map.info.width;           //col = 4000
         map_grid = std::vector<std::vector<int>>(row,std::vector<int>(col,0));
         map_grid_copy = std::vector<std::vector<int>>(row,std::vector<int>(col,0));
 
+        //change 1D the_map to 2D
         for(int i=0; i<row; i++)
         {
             for(int j=0; j<col; j++)
@@ -34,15 +34,11 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
                 map_grid[i][j] = the_map.data[i+j*row];
             }
         }
-        origin.x = the_map.info.origin.position.x;
-        origin.y = the_map.info.origin.position.y;
-        //std::cout<<"origin"<<origin.x<<","<<origin.y<<std::endl;
         map_check = true;
-        //std::cout<<"map_grid"<<std::endl;
     }
 }
 
-
+/*
 void AStarPath::thick_wall()
 {
     if(!wall_checker)
@@ -51,11 +47,12 @@ void AStarPath::thick_wall()
         {
             for(int j=0; j<col; j++)
             {
-                if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))//?
+                //if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
+                if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
                 {
                     if(map_grid[i][j]==100)
                     {
-                    map_grid[i][j] = 0;
+                        map_grid[i][j] = 0;
                     }
                 map_grid_copy[i][j] = map_grid[i][j];
                 }
@@ -102,6 +99,64 @@ void AStarPath::thick_wall()
         wall_checker = true;
     }
 }
+*/
+
+void AStarPath::thick_wall()
+{
+    if(!wall_checker)
+    {
+        for(int i=0; i<row; i++)
+        {
+            for(int j=0; j<col; j++)
+            {
+                //if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
+                if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
+                {
+                   map_grid_copy[i][j] = map_grid[i][j];
+                }
+            }
+        }
+
+        count = 0;
+
+        for(int  i=5; i<row-5; i++)
+        {
+            for(int j=5; j<col; j++)
+            {
+                if(map_grid_copy[i][j]==100)
+                {
+                    map_grid[i+1][j]=100;       //up+1
+                    map_grid[i+1][j+1]=100;     //up+1, left+1
+                    map_grid[i+1][j+2]=100;     //up+1, left+2
+                    map_grid[i][j+1]=100;       //left+1
+                    map_grid[i][j+2]=100;       //left+2
+                    map_grid[i+2][j]=100;       //up+2
+                    map_grid[i+2][j+1]=100;     //up+2, left+1
+                    map_grid[i+2][j+2]=100;     //up+2, left+2
+
+                    map_grid[i][j-1]=100;       //right+1
+                    map_grid[i][j-2]=100;       //right+2
+                    map_grid[i-1][j]=100;       //down+1
+                    map_grid[i-1][j-1]=100;     //down+1, right+1
+                    map_grid[i-1][j-2]=100;     //down+1, right+2
+                    map_grid[i-2][j]=100;       //down+2
+                    map_grid[i-2][j-1]=100;     //down+2, right+1
+                    map_grid[i-2][j-2]=100;     //down+2, right+2
+                }
+            }
+        }
+        //res is 0.05m
+        res = the_map.info.resolution;
+        for(int i=0; i<row; i++)
+        {
+            for(int j=0; j<col; j++)
+            {
+                the_map.data[i+j*row] = map_grid[i][j];
+            }
+        }
+        wall_checker = true;
+    }
+}
 
 void AStarPath::set_goal()
 {
@@ -124,12 +179,6 @@ void AStarPath::make_heuristic(int next)        //next >= 1
 void AStarPath::A_star()
 {
     //std::vector<twod> delta;
-    /* struct twod{
-        int x;
-        int y;
-    };
-    */
-
     delta = {{0,-1},{-1,0},{0,1},{1,0}};
     //go left {0,-1} = delta[0]
     //go up {-1,0} = delta[1]
@@ -184,7 +233,7 @@ void AStarPath::A_star()
         g = 0;              //cost function
         //std::cout<<"start_serchildng"<<std::endl;
 
-        while(!resign)             //if !resign is ture // resign is false
+        while(!resign)              //if !resign is ture // resign is false
         {
             if(x == gx && y == gy)  //if now point is goal point
             {
@@ -255,7 +304,8 @@ void AStarPath::A_star()
         //so point.pose.position is length
         point.pose.position.x = (x-row/2)*res;      //"row/2" is center of grid number (2000)
         point.pose.position.y = (y-col/2)*res;      //"col/2" is center of grid number (2000)
-        checkpoint_path.poses.push_back(point);     //push_back add element to end of array
+
+        checkpoint_path.poses.push_back(point);     //push_back add element to end of array//???
 
         //x, y indicate goal point (grid)
         parent.x = close_list[x][y].pre_x;
@@ -291,9 +341,8 @@ void AStarPath::A_star()
         std::reverse(checkpoint_path.poses.begin(),checkpoint_path.poses.end());
         global_path.header.frame_id = "map";            //rviz indicate this frame_id
         global_path.poses.insert(global_path.poses.end(), checkpoint_path.poses.begin(), checkpoint_path.poses.end());
-        std::cout<<"i="<<i<<" path :"<< checkpoint_path.poses.size()<<std::endl;
+        std::cout<<"i="<<i+1<<" path :"<< checkpoint_path.poses.size()<<std::endl;
     }
-    //std::cout<<"A*ok"<<std::endl;
 }
 
 void AStarPath::process()
@@ -301,18 +350,14 @@ void AStarPath::process()
     ros::Rate loop_rate(hz);
     while(ros::ok())
     {
-        //std::cout<<"map_check :"<<map_check<<std::endl;
-        //std::cout<<"path_check :"<<path_check<<std::endl;
         if(map_check && !path_check)    //map_checker and path_check are bool
         {
-            thick_wall();                   //
+            thick_wall();                   //wall add
             set_goal();                     //decide goll
             A_star();                       //A*process
-            //std::cout<<"size"<<global_path.poses.size()<<std::endl;
             map_check = false;
             path_check = true;
         }
-        //std::cout<<"finish"<<std::endl;
         pub_path.publish(global_path);
         ros::spinOnce();
         loop_rate.sleep();
@@ -324,7 +369,6 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "global_path_planner");           //node name "Global_path_planner"
     AStarPath astarpath;
-    //std:cout<<"Global_path_planner will begin"<<std::endl;
     astarpath.process();
     return 0;
 }
