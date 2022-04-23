@@ -24,6 +24,10 @@ void LocalGoalCreator::estimated_pose_callback(const geometry_msgs::PoseStamped:
     }
 }
 
+/*Goal selector
+Estimated_poseを受け取った後にその位置からある程度離れたところにあるゴールを選ぶ
+Whileでやっているのは、ある程度距離が近いgoalを少しずつ離れたとろろに移動させる
+これによってgoalとroombaが一定距離を保つように調整する。*/
 void LocalGoalCreator::local_goal_selector(){
     double dist_x = estimated_pose.pose.position.x - global_path.poses[goal_index].pose.position.x;
     double dist_y = estimated_pose.pose.position.y - global_path.poses[goal_index].pose.position.y;
