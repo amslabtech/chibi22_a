@@ -4,7 +4,7 @@ AStarPath::AStarPath():private_nh("~")
 {
     private_nh.param("hz",hz,{10});                                     //実行した後に、hzの値を変えることができる。　{}はデフォルト値
     private_nh.param("map_check",map_check,{false});
-    private_nh.param("wall_checker",wall_checker,{false});
+    private_nh.param("wall_check",wall_check,{false});
     private_nh.param("heu_check",heu_check,{false});
     private_nh.param("path_check",path_check,{false});
     sub_map = nh.subscribe("/map",10,&AStarPath::map_callback,this);    //"/map"からマップをもらい、callback関数に送る
@@ -34,10 +34,9 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
                 map_grid[i][j] = the_map.data[i+j*row];
             }
         }
-        
-        origin.x = the_map.info.origin.position.x;
-        origin.y = the_map.info.origin.position.y;
-        
+        // origin mean point which is edge of left down
+        origin.x = the_map.info.origin.position.x;      //origin.x = -100
+        origin.y = the_map.info.origin.position.y;      //origin.y = -100
         map_check = true;
     }
 }
@@ -45,7 +44,7 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 /*
 void AStarPath::thick_wall()
 {
-    if(!wall_checker)
+    if(!wall_check)
     {
         for(int i=0; i<row; i++)
         {
@@ -88,8 +87,8 @@ void AStarPath::thick_wall()
                 }
             }
         }
-        //res is 0.05m
-        res = the_map.info.resolution;
+        //resolution is 0.05m
+        resolution = the_map.info.resolution;
         for(int i=0; i<row; i++)
         {
             for(int j=0; j<col; j++)
@@ -97,14 +96,14 @@ void AStarPath::thick_wall()
                 the_map.data[i+j*row] = map_grid[i][j];
             }
         }
-        wall_checker = true;
+        wall_check = true;
     }
 }
 */
 
 void AStarPath::thick_wall()
 {
-    if(!wall_checker)
+    if(!wall_check)
     {
         /*
         for(int i=0; i<row; i++)
@@ -146,8 +145,8 @@ void AStarPath::thick_wall()
             }
         }
 
-        //res is 0.05m
-        res = the_map.info.resolution;
+        //resolution is 0.05m
+        resolution = the_map.info.resolution;
         
         //edit the_map.data (the_map.data mean 1D data , map_grid mean 2D data)
         for(int i=0; i<row; i++)
@@ -157,7 +156,7 @@ void AStarPath::thick_wall()
                 the_map.data[i+j*row] = map_grid[i][j];
             }
         }
-        wall_checker = true;
+        wall_check = true;
     }
 }
 
@@ -302,8 +301,8 @@ void AStarPath::A_star()
         
         //"(now_point-center_grid)*0.05" indicate length (not grid number)
         //so point.pose.position is length
-        point.pose.position.x = (x-row/2)*res;      //"row/2" is center of grid number (2000)
-        point.pose.position.y = (y-col/2)*res;      //"col/2" is center of grid number (2000)
+        point.pose.position.x = (x-row/2)*resolution;      //"row/2" is center of grid number (2000)
+        point.pose.position.y = (y-col/2)*resolution;      //"col/2" is center of grid number (2000)
 
         checkpoint_path.poses.push_back(point);     //push_back add element to end of array//???
 
@@ -317,25 +316,20 @@ void AStarPath::A_star()
             if(parent.x == goal[i].x && parent.y == goal[i].y)
             //whether parent is equl to real goal point or not
             {
-                point.pose.position.x = (parent.x-row/2)*res;
-                point.pose.position.y = (parent.y-col/2)*res;
+                point.pose.position.x = (parent.x-row/2)*resolution;
+                point.pose.position.y = (parent.y-col/2)*resolution;
                 checkpoint_path.poses.push_back(point);
                 startpoint = true;
             }
             else
             {
-                point.pose.position.x = (parent.x-row/2)*res;
-                point.pose.position.y = (parent.y-col/2)*res;
+                point.pose.position.x = (parent.x-row/2)*resolution;
+                point.pose.position.y = (parent.y-col/2)*resolution;
                 checkpoint_path.poses.push_back(point);
                 //child.x = parent.x;
                 //child.y = parent.y;
-                //std::cout<<"child.x :"<<child.x<<std::endl;
-                //std::cout<<"child.y :"<<child.y<<std::endl;
                 parent.x = close_list[parent.x][parent.y].pre_x;
                 parent.y = close_list[parent.x][parent.y].pre_y;
-                
-                //std::cout<<"parent.x : "<<parent.x<<std::endl;
-                //std::cout<<"parent.y : "<<parent.y<<std::endl;
             }
         }
         std::reverse(checkpoint_path.poses.begin(),checkpoint_path.poses.end());

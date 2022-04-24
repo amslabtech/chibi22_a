@@ -53,7 +53,7 @@ class AStarPath
         std::vector<std::vector<open>> close_list;
         std::vector<std::vector<open>> open_list;
 
-        float res;
+        float resolution;
         int count;
 
         int gx;
@@ -78,7 +78,7 @@ class AStarPath
         twod child;
 
         bool map_check;
-        bool wall_checker;
+        bool wall_check;
         bool resign;
         bool heu_check;
         bool startpoint;
