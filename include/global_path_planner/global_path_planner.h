@@ -70,8 +70,8 @@ class AStarPath
         int g;
         int h;
         int f[4];
-        int fmin;
-        int kmin;
+        int f_min;
+        int k_min;
 
         ftwod origin;
         twod parent;

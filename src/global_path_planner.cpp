@@ -61,43 +61,6 @@ void AStarPath::thick_wall()
                 }
             }
         }
-        for(int  i=5; i<row-5; i++)
-        {
-            for(int j=5; j<col; j++)
-            {
-                if(map_grid_copy[i][j]==100)
-                {
-                    map_grid[i+1][j]=100;
-                    map_grid[i+1][j+1]=100;
-                    map_grid[i+1][j+2]=100;
-                    map_grid[i][j+1]=100;
-                    map_grid[i][j+2]=100;
-                    map_grid[i+2][j]=100;
-                    map_grid[i+2][j+1]=100;
-                    map_grid[i+2][j+2]=100;
-
-                    map_grid[i][j-1]=100;
-                    map_grid[i][j-2]=100;
-                    map_grid[i-1][j]=100;
-                    map_grid[i-1][j-1]=100;
-                    map_grid[i-1][j-2]=100;
-                    map_grid[i-2][j]=100;
-                    map_grid[i-2][j-1]=100;
-                    map_grid[i-2][j-2]=100;
-                }
-            }
-        }
-        //resolution is 0.05m
-        resolution = the_map.info.resolution;
-        for(int i=0; i<row; i++)
-        {
-            for(int j=0; j<col; j++)
-            {
-                the_map.data[i+j*row] = map_grid[i][j];
-            }
-        }
-        wall_check = true;
-    }
 }
 */
 
@@ -105,21 +68,16 @@ void AStarPath::thick_wall()
 {
     if(!wall_check)
     {
-        /*
         for(int i=0; i<row; i++)
         {
             for(int j=0; j<col; j++)
             {
-                if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
-                {
-                   map_grid_copy[i][j] = map_grid[i][j];
-                }
+                map_grid_copy[i][j] = map_grid[i][j];
             }
         }
-        */
 
         //add wall
-        for(int  i=5; i<row-5; i++)
+        for(int i=5; i<row-5; i++)
         {
             for(int j=5; j<col; j++)
             {
@@ -162,7 +120,7 @@ void AStarPath::thick_wall()
 
 void AStarPath::set_goal()
 {
-    goal = {{2000,2000},{2320,2000},{2320,2280},{1660,2280},{1660,2000},{2000,2000}};
+    goal = {{2000,2000},{2320,2000},{2320,2300},{2000,2290},{1660,2280},{1660,2000},{2000,2000}};
 }
 
 //heuristic process that caluculate path to check point
@@ -189,18 +147,8 @@ void AStarPath::A_star()
 
     open_list = std::vector<std::vector<open>>(row,std::vector<open>(col));
 
-    for(int r=0;r<row;r++)
-    {
-        for(int c=0;c<col;c++)
-        {
-            open_list[r][c].f = 0;
-            open_list[r][c].g = 0;
-            open_list[r][c].pre_x = 0;
-            open_list[r][c].pre_y = 0;
-        }
-    }
     //A*process that caluculate path to check point
-    for(int i=0; i<5; i++)
+    for(int i=0; i<goal.size()-1; i++)
     {
         checkpoint_path.poses.clear();    //clear() : clear elements //"member function" of vector
         make_heuristic(i+1);        //make heuristic // next is over 1 , so i+1
@@ -208,6 +156,9 @@ void AStarPath::A_star()
         goal_point.header.frame_id = "map";         //rviz indicate this frame_id
         goal_point.pose.position.x = goal[i+1].x;   //local goal of x
         goal_point.pose.position.y = goal[i+1].y;   //local goal of y
+
+        //std::cout<<"goal_point.pose.position.x  :  "<<goal_point.pose.position.x<<std::endl;
+        //std::cout<<"goal_point.pose.position.y  :  "<<goal_point.pose.position.y<<std::endl;
 
         close_list = std::vector<std::vector<open>>(row,std::vector<open>(col));
 
@@ -237,13 +188,13 @@ void AStarPath::A_star()
         {
             if(x == gx && y == gy)  //if now point is goal point
             {
-                resign = true;     //search finish
+                resign = true;      //search finish
             }
             else                    //if now point is not goal point
             {
                 g += 1;             //add cost to g
                 // following "for" sentence is 4 direction check
-                for(int j=0; j<4; j++)
+                for(int j=0; j<delta.size(); j++)
                 {
                     //order is "left -> up -> right -> down"
                     x2 = x + delta[j].x;                            //dicide 4 direction
@@ -271,40 +222,43 @@ void AStarPath::A_star()
                         }
                     }
                 }
+
                 //initializetion
-                fmin = f[0];
-                kmin = 0;
+                f_min = f[0];
+                k_min = 0;
 
                 //search minimum f cost
                 for(int k=0; k<4; k++)
                 {
-                    if(f[k]<fmin)
+                    if(f[k]<f_min)
                     {
-                        fmin = f[k];
-                        kmin = k;
+                        f_min = f[k];
+                        k_min = k;
                     }
                 }
 
                 //now point update
-                if(fmin!=1000)
+                if(f_min!=1000)
                 {
                     old_x = x;                  //substitution now point (x) to old_x
                     old_y = y;                  //substitution now point (y) to old_y
-                    x = x + delta[kmin].x;      //update now point (x) // plus most smallest cost delta[kmin].x
-                    y = y + delta[kmin].y;      //update now point (y) // plus most smallest cost delta[kmin].y
+                    x = x + delta[k_min].x;      //update now point (x) // plus most smallest cost delta[k_min].x
+                    y = y + delta[k_min].y;      //update now point (y) // plus most smallest cost delta[k_min].y
                 }
             }
         }
+
         startpoint = false;
         checkpoint_path.header.frame_id = "map";
-        geometry_msgs::PoseStamped point;
         
+        geometry_msgs::PoseStamped point;
+
         //"(now_point-center_grid)*0.05" indicate length (not grid number)
         //so point.pose.position is length
         point.pose.position.x = (x-row/2)*resolution;      //"row/2" is center of grid number (2000)
         point.pose.position.y = (y-col/2)*resolution;      //"col/2" is center of grid number (2000)
 
-        checkpoint_path.poses.push_back(point);     //push_back add element to end of array//???
+        checkpoint_path.poses.push_back(point);     //push_back add element to end of array
 
         //x, y indicate goal point (grid)
         parent.x = close_list[x][y].pre_x;
