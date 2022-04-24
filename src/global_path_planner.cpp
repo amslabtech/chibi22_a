@@ -105,7 +105,7 @@ void AStarPath::thick_wall()
 
         //resolution is 0.05m
         resolution = the_map.info.resolution;
-        
+
         //edit the_map.data (the_map.data mean 1D data , map_grid mean 2D data)
         for(int i=0; i<row; i++)
         {
@@ -250,7 +250,7 @@ void AStarPath::A_star()
 
         startpoint = false;
         checkpoint_path.header.frame_id = "map";
-        
+
         geometry_msgs::PoseStamped point;
 
         //"(now_point-center_grid)*0.05" indicate length (not grid number)
@@ -306,7 +306,10 @@ void AStarPath::process()
             map_check = false;
             path_check = true;
         }
-        pub_path.publish(global_path);
+        if(path_check==true)
+        {
+            pub_path.publish(global_path);
+        }
         ros::spinOnce();
         loop_rate.sleep();
     }
