@@ -8,7 +8,7 @@
 
 struct open
 {
-    int f;
+    double f;
     int g;
     int pre_x;
     int pre_y;
@@ -16,8 +16,8 @@ struct open
 
 struct twod
 {
-    int x;
-    int y;
+    double x;
+    double y;
 };
 
 struct ftwod
@@ -46,7 +46,7 @@ class AStarPath
         std::vector<std::vector<int>> map_grid;
         std::vector<std::vector<int>> map_grid_copy;
 
-        std::vector<std::vector<int>> heuristic;
+        std::vector<std::vector<double>> heuristic;
 
         std::vector<twod> goal;
 
@@ -54,7 +54,6 @@ class AStarPath
         std::vector<std::vector<open>> open_list;
 
         float resolution;
-        int count;
 
         int gx;
         int gy;
@@ -68,10 +67,9 @@ class AStarPath
         std::vector<twod> delta;
 
         int g;
-        int h;
-        int f[4];
-        int f_min;
-        int k_min;
+        double f[8];
+        double f_min;
+        double k_min;
 
         ftwod origin;
         twod parent;

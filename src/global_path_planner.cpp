@@ -126,12 +126,12 @@ void AStarPath::set_goal()
 //heuristic process that caluculate path to check point
 void AStarPath::make_heuristic(int next)        //next >= 1
 {
-    heuristic = std::vector<std::vector<int>>(row,std::vector<int>(col,0));
+    heuristic = std::vector<std::vector<double>>(row,std::vector<double>(col,0));
     for(int i=0; i<row; i++)
     {
         for(int j=0; j<col; j++)
         {
-            heuristic[i][j] = abs(goal[next].x - i) + abs(goal[next].y - j);
+            heuristic[i][j] = sqrt((goal[next].x - i)*(goal[next].x - i) + (goal[next].y - j)*(goal[next].y - j));
         }
     }
 }
@@ -139,11 +139,15 @@ void AStarPath::make_heuristic(int next)        //next >= 1
 void AStarPath::A_star()
 {
     //std::vector<twod> delta;
-    delta = {{0,-1},{-1,0},{0,1},{1,0}};
+    delta = {{0,-1},{-1,0},{0,1},{1,0},{1,1},{1,-1},{-1,1},{-1,-1}};
     //go left {0,-1} = delta[0]
     //go up {-1,0} = delta[1]
     //go right {0,1} = delta[2]
     //go down {1,0} = delta[3]
+    //go down right {1,1} = delta[4]
+    //go down left = {1,-1} = delta[5]
+    //go up right = {-1,1} = delta[6]
+    //go up left = {-1,-1} = delta[7]
 
     open_list = std::vector<std::vector<open>>(row,std::vector<open>(col));
 
@@ -214,6 +218,9 @@ void AStarPath::A_star()
                             close_list[x2][y2].pre_x = x;           //substitution now_x to pre_x
                             close_list[x2][y2].pre_y = y;           //substitution now_y to pre_y
                             close_list[x2][y2].g = 1;               //substitution
+                            
+                            std::cout<<"f : "<<f[j]<<std::endl;
+                            
                         }
                         else
                         {
@@ -228,7 +235,7 @@ void AStarPath::A_star()
                 k_min = 0;
 
                 //search minimum f cost
-                for(int k=0; k<4; k++)
+                for(int k=0; k<delta.size(); k++)
                 {
                     if(f[k]<f_min)
                     {
@@ -247,6 +254,8 @@ void AStarPath::A_star()
                 }
             }
         }
+
+        //std::cout<<"bad"<<std::endl;
 
         startpoint = false;
         checkpoint_path.header.frame_id = "map";
@@ -306,7 +315,10 @@ void AStarPath::process()
             map_check = false;
             path_check = true;
         }
-        pub_path.publish(global_path);
+        if(map_check == true)
+        {
+            pub_path.publish(global_path);
+        }
         ros::spinOnce();
         loop_rate.sleep();
     }
