@@ -21,7 +21,6 @@ Local_map_creator::Local_map_creator():private_nh("~"){
     local_map.info.origin.position.y = - map_size / 2;
     local_map.data.reserve(local_map.info.width * local_map.info.height);
     init_map();
-
 }
 
 void Local_map_creator::laser_callback(const sensor_msgs::LaserScan::ConstPtr &msg){
