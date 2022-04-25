@@ -1,5 +1,7 @@
 #include <local_map_creator/local_map_creator.h>
 
+//reidayo
+
 Local_map_creator::Local_map_creator():private_nh("~"){
     //paramators
     private_nh.getParam("hz", hz);
