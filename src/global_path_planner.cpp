@@ -41,29 +41,6 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
     }
 }
 
-/*
-void AStarPath::thick_wall()
-{
-    if(!wall_check)
-    {
-        for(int i=0; i<row; i++)
-        {
-            for(int j=0; j<col; j++)
-            {
-                //if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
-                if((j>2282 && j<2295 && i>1547 && i<2213) || (j>1997 && j<2282 && i>1540 && i<1555) || (j>1995 && j<2007 && i>1547 && i<2213) || (j>2003 && j<2290 && i>2205 && i<2220))
-                {
-                    if(map_grid[i][j]==100)
-                    {
-                        map_grid[i][j] = 0;
-                    }
-                map_grid_copy[i][j] = map_grid[i][j];
-                }
-            }
-        }
-}
-*/
-
 void AStarPath::thick_wall()
 {
     if(!wall_check)
@@ -160,10 +137,8 @@ void AStarPath::A_star()
         goal_point.header.frame_id = "map";         //rviz indicate this frame_id
         goal_point.pose.position.x = goal[i+1].x;   //local goal of x
         goal_point.pose.position.y = goal[i+1].y;   //local goal of y
-
         //std::cout<<"goal_point.pose.position.x  :  "<<goal_point.pose.position.x<<std::endl;
         //std::cout<<"goal_point.pose.position.y  :  "<<goal_point.pose.position.y<<std::endl;
-
         close_list = std::vector<std::vector<open>>(row,std::vector<open>(col));
 
         //initializetion of list
@@ -229,11 +204,9 @@ void AStarPath::A_star()
                         }
                     }
                 }
-
                 //initializetion
                 f_min = f[0];
                 k_min = 0;
-
                 //search minimum f cost
                 for(int k=0; k<delta.size(); k++)
                 {
@@ -243,7 +216,6 @@ void AStarPath::A_star()
                         k_min = k;
                     }
                 }
-
                 //now point update
                 if(f_min!=1000)
                 {
@@ -268,7 +240,6 @@ void AStarPath::A_star()
         point.pose.position.y = (y-col/2)*resolution;      //"col/2" is center of grid number (2000)
 
         checkpoint_path.poses.push_back(point);     //push_back add element to end of array
-
         //x, y indicate goal point (grid)
         parent.x = close_list[x][y].pre_x;
         parent.y = close_list[x][y].pre_y;
@@ -315,14 +286,13 @@ void AStarPath::process()
             map_check = false;
             path_check = true;
         }
-<<<<<<< HEAD
-        if(map_check == true)
-=======
+        pub_path.publish(global_path);
+        /*
         if(path_check==true)
->>>>>>> c7ac9dac0f325f4d1ce94fad6fa841a694464c65
         {
             pub_path.publish(global_path);
         }
+        */
         ros::spinOnce();
         loop_rate.sleep();
     }
