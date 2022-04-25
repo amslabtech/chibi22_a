@@ -133,7 +133,6 @@ void Localizer::motion_update()
     double current_yaw = tf::getYaw(current_odometry.pose.pose.orientation);
     double previous_yaw = tf::getYaw(previous_odometry.pose.pose.orientation);
     double dyaw = adjust_yaw(current_yaw - previous_yaw);
-    // ???
     double dtrans = sqrt(dx*dx + dy*dy);
     double drot1 = adjust_yaw(atan2(dy, dx) - previous_yaw);
     double drot2 = adjust_yaw(dyaw - drot1);
@@ -291,6 +290,7 @@ void Localizer::observation_update()
     }
     estimate_pose();
     double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
+
     if(alpha_slow == 0){
         alpha_slow = alpha;
     }
@@ -308,6 +308,7 @@ void Localizer::observation_update()
     if(estimated_pose_w > estimated_pose_w_th || reset_count > reset_limit){
         reset_count = 0;
         adaptive_resampling();
+
     }
     else{
         reset_count += 1;
@@ -336,9 +337,38 @@ void Localizer::create_p_pose_array_from_p_array(std::vector<Particle> &p_array)
 
 void Localizer::process()
 {
+    tf2_ros::TransformBroadcaster odom_state_broadcaster;
     ros::Rate loop_rate(hz);
     while(ros::ok()){
         if(map_get_ok && odometry_get_ok){
+            try{
+                double map2base_x = estimated_pose.pose.position.x;
+                double map2base_y = estimated_pose.pose.position.y;
+                double map2base_yaw = tf::getYaw(current_odometry.pose.pose.orientation);
+
+                double odom2base_x = current_odometry.pose.pose.position.x;
+                double odom2base_y = current_odometry.pose.pose.position.y;
+                double odom2base_yaw = tf::getYaw(current_odometry.pose.pose.orientation);
+
+                double map2odom_yaw = adjust_yaw(map2base_yaw - odom2base_yaw);
+                double map2odom_x = map2base_x - odom2base_x * cos(map2odom_yaw) + odom2base_y * sin(map2odom_yaw);
+                double map2odom_y = map2base_y - odom2base_x * sin(map2odom_yaw) - odom2base_y * cos(map2odom_yaw);
+                geometry_msgs::Quaternion map2odom_quat;
+                quaternionTFToMsg(tf::createQuaternionFromYaw(map2odom_yaw), map2odom_quat);
+
+                geometry_msgs::TransformStamped odom_state;
+                odom_state.header.stamp = ros::Time::now();
+                odom_state.header.frame_id = "map";
+                odom_state.child_frame_id = "odom";
+                odom_state.transform.translation.x = map2odom_x;
+                odom_state.transform.translation.y = map2odom_y;
+                odom_state.transform.rotation = map2odom_quat;
+                odom_state_broadcaster.sendTransform(odom_state);
+
+
+            }catch(tf2::TransformException &ex){
+                ROS_ERROR("%s", ex.what());
+            }
             create_p_pose_array_from_p_array(p_array);
             p_pose_array_pub.publish(p_pose_array);
             estimated_pose_pub.publish(estimated_pose);

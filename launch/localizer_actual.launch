@@ -27,7 +27,8 @@
         <param name="search_range" value="30"/>
     </node>
     <node pkg="rosbag" name="rosbag" type="play" args="/home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
-    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser"/>
-    <rosparam param="/use_sim_time">true</rosparam>
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
+    <node pkg="joy" name="joy_node" type="joy_node"/>
+    <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser"/>
 </launch>
