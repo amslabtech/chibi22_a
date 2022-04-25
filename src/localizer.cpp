@@ -1,4 +1,5 @@
 #include <localizer/localizer.h>
+// #include <transform_broadcaster.h>
 std::random_device seed;
 std::mt19937 engine(seed());
 std::default_random_engine engine2(seed());
@@ -77,10 +78,63 @@ void Localizer::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 
 void Localizer::observation_update()
 {
+    for(auto& p:p_array)
+    {
+        double weight=calc_w(p.p_pose);
+        p.w=weight;
+    }
+    estimate_pose();
+    double estimated_pose_w=calc_w(estimated_pose)/(laser.ranges.size()/laser_step);
+    if(alpha_slow==0)
+    {
+        alpha_slow=alpha;
+    }
+    else
+    {
+        alpha_slow += alpha_slow_th*(alpha-alpha_slow);
+    }
+    if(alpha_fast==0)
+    {
+        alpha_fast=alpha;
+    }
+    else
+    {
+        alpha_fast += alpha_fast_th*(alpha-alpha_fast);
 
+    }
+
+    if(estimated_pose_w > estimated_pose_w_th||reset_count>reset_limit)
+    {
+        reset_count = 0;
+        adaptive_resampling();
+    }
+    else
+    {
+        reset_count += 1;
+        expansion_reset();
+    }
 }
 
+void Localizer::estimate_pose()
+{
+    normalize_w();
+    double x=0;
+    double y=0;
+    double yaw=0;
+    double w_max = 0;
+    for(auto& p:p_array){
+        x+= p.p_pose.pose.position.x*p.w;
+        y+= p.p_pose.pose.position.y*p.w;
+        if(p.w>w_max){
+            w_max=p.w;
+            yaw=tf::getYaw(p.p_pose.pose.orientation);
+        }
+    }
 
+    estimated_pose.pose.position.x = x;
+    estimated_pose.pose.position.y = y;
+    quaternionTFToMsg(tf::createQuaternionFromYaw(yaw), estimated_pose.pose.orientation);
+}
 
 Localizer::Particle Localizer::make_particle()
 {
@@ -94,8 +148,7 @@ void Localizer::odometry_callback(const nav_msgs::Odometry::ConstPtr &msg)
         previous_odometry = current_odometry;
         current_odometry= *msg;
         if(!odometry_get_ok)
-        {
-            previous_odometry=current_odometry;}
+        {previous_odometry=current_odometry;}
         motion_update();
         odometry_get_ok=true;
     }
@@ -117,17 +170,154 @@ void Localizer::motion_update()
     }
 }
 
+int Localizer::xy_to_map_index(double x, double y)
+{
+    int index_x = int((x-map.info.origin.position.x) /map.info.resolution);
+    int index_y = int((y-map.info.origin.position.y) /map.info.resolution);
+    return index_x + index_y * map.info.width;
+}
+
+double Localizer::dist_from_p_to_wall(double x_start, double y_start, double yaw, double laser_range)
+{
+    double search_step = map.info.resolution;
+    double search_limit = std::min(laser_range*(1.0+laser_noise_ratio*5), search_range);
+    for(double dist_from_start = search_step; dist_from_start <= search_limit; dist_from_start += search_step)
+    {
+        double x_now = x_start+dist_from_start*cos(yaw);
+        double y_now = y_start+dist_from_start*sin(yaw);
+        int map_index = xy_to_map_index(x_now, y_now);
+        if(map.data[map_index]==100){
+            return dist_from_start;
+        }
+        if(map.data[map_index]==-1){
+            return search_range*2;
+        }
+    }
+    return search_limit;
+}
+
+double Localizer::calc_w(geometry_msgs::PoseStamped &pose)
+{
+    double weight = 0;
+    double angle_increment = laser.angle_increment;
+    double angle_min = laser.angle_min;
+    double x = pose.pose.position.x;
+    double y = pose.pose.position.y;
+    double yaw = tf::getYaw(pose.pose.orientation);
+    for(int i=0, size=laser.ranges.size(); i<size; i+=laser_step){
+        if(laser.ranges[i] > 0.2){
+            double angle = i*angle_increment+angle_min;
+            double dist_to_wall=dist_from_p_to_wall(x, y, yaw+angle, laser.ranges[i]);
+            weight += gaussian(laser.ranges[i], laser.ranges[i]*laser_noise_ratio, dist_to_wall);
+        }
+    }
+    return weight;
+}
+
+void Localizer::normalize_w()
+{
+    alpha = 0;
+    for(auto& p:p_array){
+        alpha += p.w;
+    }
+    for(auto& p:p_array){
+        p.w /= alpha;
+    }
+}
+
+void Localizer::adaptive_resampling()
+{
+    std::uniform_real_distribution<>random(0.0, 1.0);
+
+    double r = random(engine2);
+    int index = 0;
+    double reset_ratio=1-(alpha_fast/alpha_slow);
+    std::vector<Particle>p_array_after_resampling;
+    p_array_after_resampling.reserve(p_array.size());
+    for(int i=0, size=p_array.size(); i<size; ++i){
+        r += 1.0/particle_number;
+        while(r>p_array[index].w){
+            r-=p_array[index].w;
+            index = (index+1)%particle_number;
+        }
+        if(random(engine2)>reset_ratio){
+            Particle p = p_array[index];
+            p.w = 1.0/particle_number;
+            p_array_after_resampling.push_back(p);
+        }
+        else
+        {
+            Particle p = p_array[index];
+            p.w = 1.0/particle_number;
+
+            double x = estimated_pose.pose.position.x;
+            double y = estimated_pose.pose.position.y;
+            double yaw = tf::getYaw(estimated_pose.pose.orientation);
+            p.set_p(x, y, yaw, reset_x_sigma, reset_y_sigma, reset_yaw_sigma);
+            p_array_after_resampling.push_back(p);
+        }
+    }
+    p_array=p_array_after_resampling;
+}
+
+void Localizer::expansion_reset()
+{
+    for(auto& p:p_array)
+    {
+        double x = p.p_pose.pose.position.x;
+        double y = p.p_pose.pose.position.y;
+        double yaw = tf::getYaw(p.p_pose.pose.orientation);
+
+        p.set_p(x, y, yaw, expansion_x_speed, expansion_y_speed, expansion_yaw_speed);
+    }
+}
 
 void Localizer::process()
 {
+    // tf2_ros::TransformBroadcaster odom_state_broadcaster;
     ros::Rate loop_rate(hz);
     while(ros::ok()){
-        if(map_get_ok /*&& odometry_get_ok*/){
+        if(map_get_ok && odometry_get_ok){
 
 
-            std::cout<<"particle nummber:"<<particle_number<<std::endl;
-            std::cout<<"dot size:"<<p_pose_array.poses.size()<<std::endl;
-            std::cout<<"p_array_dot size:"<<p_array.size()<<std::endl;
+            // std::cout<<"particle nummber:"<<particle_number<<std::endl;
+            // std::cout<<"dot size:"<<p_pose_array.poses.size()<<std::endl;
+            // std::cout<<"p_array_dot size:"<<p_array.size()<<std::endl;
+            //
+           // try{
+           //     double map_to_base_x = estimated_pose.pose.position.x;
+           //     double map_to_base_y = estimated_pose.pose.position.y;
+           //     double map_to_base_yaw = tf::getYaw(estimated_pose.pose.orientation);
+           //
+           //     double odom_to_base_x = current_odometry.pose.pose.position.x;
+           //     double odom_to_base_y = current_odometry.pose.pose.position.y;
+           //     double odom_to_base_yaw = tf::getYaw(current_odometry.pose.pose.orientation);
+           //
+           //     double map_to_odom_yaw=adjust_yaw(map_to_base_yaw-odom_to_base_yaw);
+           //     double map_to_odom_x = map_to_base_x - odom_to_base_x * cos(map_to_odom_yaw)+odom_to_base_y*sin(map_to_odom_yaw);
+           //     double map_to_odom_y = map_to_base_y - odom_to_base_x * sin(map_to_odom_yaw)-odom_to_base_y*cos(map_to_odom_yaw);
+           //
+           //     geometry_msgs::Quaternion map_to_odom_quat;
+           //     quaternionTFToMsg(tf::createQuaternionFromYaw(map_to_odom_yaw),map_to_odom_quat);
+           //
+           //
+           //
+           //     geometry_msgs::TransformStamped odom_state;
+           //
+           //     odom_state.header.stamp = ros::Time::now();
+           //
+           //     odom_state.header.frame_id="map";
+           //     odom_state.child_frame_id="odom";
+           //
+           //     odom_state.transform.translation.x = map_to_odom_x;
+           //     odom_state.transform.translation.y = map_to_odom_y;
+           //     odom_state.transform.rotation = map_to_odom_quat;
+           //
+           //     // odom_state_broadcaster.sendTransform(odom_state);
+           // }
+           // catch(tf2::TransformException &ex){
+           //     ROS_ERROR("%s", ex.what());
+           // }
 
             create_p_pose_array_from_p_array(p_array);
             p_pose_array.header.frame_id = "map";
@@ -145,7 +335,7 @@ void Localizer::create_p_pose_array_from_p_array(std::vector<Particle>&p_array)
     p_pose_array.header.frame_id="map";
     for(auto& p:p_array){
         p_pose_array.poses.push_back(p.p_pose.pose);
-            std::cout<<"dot size:"<<p_pose_array.poses.size()<<std::endl;
+            // std::cout<<"dot size:"<<p_pose_array.poses.size()<<std::endl;
     }
 
 }
