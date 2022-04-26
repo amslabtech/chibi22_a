@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(chibi22_a)
-
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -9,6 +8,12 @@ project(chibi22_a)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
+  roomba_500driver_meiji
+  std_msgs
+  nav_msgs
+  geometry_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -114,7 +119,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -132,6 +137,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/chibi22_a_node.cpp)
+add_executable(local_path_planner src/local_path_planner.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -141,12 +147,14 @@ include_directories(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
+add_dependencies(local_path_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(local_path_planner ${catkin_LIBRARIES})
 
 #############
 ## Install ##

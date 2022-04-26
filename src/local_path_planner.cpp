@@ -1,6 +1,6 @@
-#include "local_path_planner/local_path_planner.h"
+#include "chibi22_a/local_path_planner.h"
 
-Dynamic_Window_Approach::Dynamic_Window_Approach():private_nh("~")
+DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
 {
     private_nh.param("max_speed",max_speed,{1.0});
     private_nh.param("min_speed",min_speed,{0.0});
@@ -12,33 +12,91 @@ Dynamic_Window_Approach::Dynamic_Window_Approach():private_nh("~")
     private_nh.param("cost_heading",cost_heading,{1.0});
     private_nh.param("cost_velocity",cost_velocity,{1.0});
     private_nh.param("cost_obs",cost_obs,{1.0});
+    private_nh.param("world",world,{5.0});
+    private_nh.param("safemass_x",safemass_x,{10});
+    private_nh.param("safemass_y",safemass_y,{10});
+    private_nh.param("distance",distance,{0.0});
+    private_nh.param("dist_min",dist_min,{0.0});
+    private_nh.param("max_cost",max_cost,{0.0});
+    private_nh.param("v_reso",v_reso,{0.1});
+    private_nh.param("omega_reso",omega_reso,{0.1});
+    private_nh.param("current_velocity",current_velocity,{0.0});
+    private_nh.param("current_omega",current_omega,{0.0});
+    private_nh.param("column",column,{0});
+    private_nh.param("row",row,{0});
+    private_nh.param("resolution",resolution,{0.0});
+    private_nh.param("goal_tolerance",goal_tolerance,{0.3});
+    private_nh.param("wait",wait,{0.0});
+    private_nh.param("hz",hz,{10});
 
-    sub_local_goal = nh.subscribe("local_goal",10,&Dynamic_Window_Approach::local_goal_callback,this);
-    sub_pose = nh.subscribe("pose",10,&Dynamic_Window_Approach::pose_callback,this);
+    sub_local_goal = nh.subscribe("local_goal",10,&DynamicWindowApproach::local_goal_callback,this);
+    sub_pose = nh.subscribe("pose",10,&DynamicWindowApproach::pose_callback,this);
+    sub_local_map = nh.subscribe("local_map",10,&DynamicWindowApproach::local_map_callback,this);
 
     pub_predict_path = nh.advertise<nav_msgs::Path>("predict_path",1);
+    pub_best_predict_path = nh.advertise<nav_msgs::Path>("best_predict_path",1);
+    pub_roomba_ctrl = nh.advertise<roomba_500driver_meiji::RoombaCtrl>("/roomba/control",1);
 }
 
-void Dynamic_Window_Approach::local_goal_callback(const geometry_msgs::Posestamped::ConstPtr& msg)
+void DynamicWindowApproach::local_goal_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     local_goal=*msg;
 }
 
-void Dynamic_Window_Approach::pose_callback(const geometry_msgs::Posestamped::ConstPtr& msg)
+void DynamicWindowApproach::pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     pose=*msg;
 }
 
-//ダイナミックウィンドウを作成
-void Dynamic_Window_Approach::create_dynamic_window()
+void DynamicWindowApproach::local_map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 {
-    std::vector<float> Vs = {max_speed,min_speed,max_yawrate,-1*max_yawrate};
+    local_map = *msg;
+    if(local_map.data.size()!=0)set_map();
+}
 
-    std::vector<float> Vd = {
-        current_state.v + max_accel*dt,
-        current_state.v - max_accel*dt,
-        current_state.omega + max_dyawrate,
-        current_state.omega - max_dyawrate
+void DynamicWindowApproach::set_map()
+{
+    column = local_map.info.width;
+    row = local_map.info.height;
+    resolution = local_map.info.resolution;
+    map.resize(row,std::vector<int>(column));
+
+    for(int i=0;i<row;i++)
+    {
+        for(int j=0;j<column;j++)
+        {
+            map[i][j] = local_map.data[j*row+i];
+        }
+    }
+    receive_local_map = true;
+}
+
+bool DynamicWindowApproach::goal_reach()
+{
+    double dx = pose.pose.position.x - local_goal.pose.position.x;
+    double dy = pose.pose.position.y - local_goal.pose.position.y;
+    double dist_goal = sqrt(std::pow(dx,2)+std::pow(dy,2));
+
+    if(dist_goal < goal_tolerance )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+//ダイナミックウィンドウを作成
+void DynamicWindowApproach::create_dynamic_window()
+{
+    std::vector<double> Vs = {max_speed,min_speed,max_yawrate,-1*max_yawrate};
+
+    std::vector<double> Vd = {
+        current_velocity + max_accel*dt,
+        current_velocity - max_accel*dt,
+        current_omega + max_dyawrate,
+        current_omega - max_dyawrate
     };
 
     dw.max_v = std::min(Vs[0],Vd[0]);
@@ -49,7 +107,7 @@ void Dynamic_Window_Approach::create_dynamic_window()
 }
 
 //軌跡を計算
-void Dynamic_Window_Approach::calc_trajectory(const double &v, const double &omega)
+void DynamicWindowApproach::calc_trajectory(const double &v, const double &omega)
 {
     traj.clear();
 
@@ -65,29 +123,29 @@ void Dynamic_Window_Approach::calc_trajectory(const double &v, const double &ome
         roomba_traj.omega = omega;
         traj.push_back(roomba_traj);
 
-        geometry_msgs::Posestamped sim_pose;
+        geometry_msgs::PoseStamped sim_pose;
         sim_pose.pose.position.x = roomba_traj.x;
         sim_pose.pose.position.y = roomba_traj.y;
         predict_path.poses.push_back(sim_pose);
     }
-    predict_path.header.frame.id= "base_link";
+    predict_path.header.frame_id= "base_link";
     pub_predict_path.publish(predict_path);
 }
 
 //評価関数の計算
-double Dynamic_Window_Approach::calc_evaluation(std::vector<State>& traj)
+double DynamicWindowApproach::calc_evaluation()
 {
-    double cost_heading = calc_cost_heading(traj) * weight_heading;
-    double cost_velocity = calc_cost_velocity(traj) * weight_velocity;
-    double cost_obs = calc_cost_obs(traj) * weight_obs;
+    double cost_heading = calc_cost_heading() * cost_heading;
+    double cost_velocity = calc_cost_velocity() * cost_velocity;
+    double cost_obs = calc_cost_obstacle() * cost_obs;
 
     double cost_total = cost_heading + cost_velocity + cost_obs;
 
     return cost_total;
 }
 
-//ゴールにどれだけ向いているか
-double Dynamic_Window_Approach::calc_cost_heading(std::vector<State>& traj)
+//角度の評価関数
+double DynamicWindowApproach::calc_cost_heading()
 {
     double goal_theta = std::atan2(local_goal.pose.position.y - pose.pose.position.y - traj.back().y,local_goal.pose.position.x - pose.pose.position.x - traj.back().x);
     double score_angle = goal_theta - tf::getYaw(pose.pose.orientation) - traj.back().yaw;
@@ -97,17 +155,150 @@ double Dynamic_Window_Approach::calc_cost_heading(std::vector<State>& traj)
     return std::abs(score_angle)/M_PI;
 }
 
-double Dynamic_Window_Approach::calc_cost_velocity(std::vector<State>& traj)
+//速度の評価関数
+double DynamicWindowApproach::calc_cost_velocity()
 {
     return (max_speed - traj.back().v)/max_speed;
 }
 
-double Dynamic_Window_Approach::calc_cost_obstacle()
+//障害物の評価関数
+double DynamicWindowApproach::calc_cost_obstacle()
 {
-    double dist_min = 1e3;
+    dist_min = 1e3;
+    max_cost = 0.0;
 
-    for(auto& state : traj){
+    for(auto& state : traj)
+    {
+        int x = (int)((state.x - (-world/2))/resolution);
+        int y = (int)((state.y - (-world/2))/resolution);
+
+        for(int i = x-safemass_x; i<x+safemass_x; i++)
+        {
+            for(int j = y-safemass_y; j<y+safemass_y; j++)
+            {
+                if(i>0 && j>0 && (map[i][j] == 100))
+                {
+                    a = double(-world/2 + i*resolution);
+                    b = double(-world/2 + j*resolution);
+
+                    distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
+                    if(b<0)
+                    {
+                        continue;
+                    }
+
+                    if(distance <= 0.2)
+                    {
+                        distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
+                        max_cost = 1e10;
+                    }
+                    if(dist_min >= distance)
+                    {
+                        dist_min = distance;
+                    }
+                }
+            }
+        }
+    }
+    if(max_cost>dist_min) return max_cost;
+    else return 1.0/dist_min;
+}
+
+void DynamicWindowApproach::calc_final_input()
+{
+    min_cost = 1e10;
+    best_traj.clear();
+    final_cost = 0.0;
+
+    for(double v = dw.min_v; v<=dw.max_v; v+=v_reso )
+    {
+        for(double omega = dw.min_yawrate; omega<=dw.max_yawrate; omega+=omega_reso)
+        {
+            calc_trajectory(v,omega);
+            final_cost = calc_evaluation();
+            if(min_cost >= final_cost)
+            {
+                min_cost = final_cost;
+                min_v = v;
+                min_yawrate = omega;
+                best_traj = traj;
+            }
+
+            current_velocity = min_v;
+            current_omega = min_yawrate;
+        }
+    }
+    visualize_traj();
+}
+
+void DynamicWindowApproach::visualize_traj()
+{
+    best_predict_path.poses.clear();
+    for(auto& state : best_traj)
+    {
+        geometry_msgs::PoseStamped best_path_point;
+        best_path_point.pose.position.x = state.x;
+        best_path_point.pose.position.y = state.y;
+        best_predict_path.poses.push_back(best_path_point);
+    }
+    best_predict_path.header.frame_id = "base_link";
+    pub_best_predict_path.publish(best_predict_path);
+}
+
+void DynamicWindowApproach::roomba_control(double v,double yawrate)
+{
+    cmd_vel.mode=11;
+    cmd_vel.cntl.linear.x = v;
+    cmd_vel.cntl.angular.z = yawrate;
+    pub_roomba_ctrl.publish(cmd_vel);
+}
+
+void DynamicWindowApproach::dwa_control()
+{
+    create_dynamic_window();
+    calc_final_input();
+
+    if(wait < 5)
+    {
+        roomba_control(0.0,0.0);
+        wait++;
+    }
+    else
+    {
+        roomba_control(min_v,min_yawrate);
+    }
+
+    if(goal_reach())
+    {
+        std::cout << "goal" << std::endl;
+        roomba_control(0.0,0.0);
+    }
+
+    if(dist_min == 1e10){
+        roomba_control(0.0,0.0);
     }
 }
 
+void DynamicWindowApproach::process()
+{
+    ros::Rate loop_rate(hz);
+    while (ros::ok())
+    {
+        if(receive_local_map)
+        {
+            dwa_control();
+            receive_local_map = false;
+        }
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+}
+
+int main(int argc,char** argv)
+{
+    ros::init(argc,argv, "local_path_planner");
+    DynamicWindowApproach DWA;
+    DWA.process();
+    return 0;
+}
 
