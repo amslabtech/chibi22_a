@@ -263,13 +263,13 @@ void Localizer::adaptive_resampling()
 void Localizer::expansion_reset()
 {
     for(auto& p:p_array)
-    {
-        double x = p.p_pose.pose.position.x;
-        double y = p.p_pose.pose.position.y;
-        double yaw = tf::getYaw(p.p_pose.pose.orientation);
+     {
+         double x = p.p_pose.pose.position.x;
+         double y = p.p_pose.pose.position.y;
+         double yaw = tf::getYaw(p.p_pose.pose.orientation);
 
-        p.set_p(x, y, yaw, expansion_x_speed, expansion_y_speed, expansion_yaw_speed);
-    }
+         p.set_p(x, y, yaw, expansion_x_speed, expansion_y_speed, expansion_yaw_speed);
+     }
 }
 
 void Localizer::process()
@@ -322,6 +322,8 @@ void Localizer::process()
             create_p_pose_array_from_p_array(p_array);
             p_pose_array.header.frame_id = "map";
             p_pose_array_pub.publish(p_pose_array);
+            estimated_pose_pub.publish(estimated_pose);
+
         }
 
         ros::spinOnce();
