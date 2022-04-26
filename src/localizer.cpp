@@ -5,6 +5,7 @@ std::default_random_engine engine2(seed());
 
 Localizer::Localizer():private_nh("~")
 {
+    private_nh.param("hz", hz, {10});
     // map_callback
     private_nh.getParam("particle_number", particle_number);
     private_nh.getParam("init_x", init_x);
