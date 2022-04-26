@@ -344,7 +344,7 @@ void Localizer::process()
             try{
                 double map2base_x = estimated_pose.pose.position.x;
                 double map2base_y = estimated_pose.pose.position.y;
-                double map2base_yaw = tf::getYaw(current_odometry.pose.pose.orientation);
+                double map2base_yaw = tf::getYaw(estimated_pose.pose.orientation);
 
                 double odom2base_x = current_odometry.pose.pose.position.x;
                 double odom2base_y = current_odometry.pose.pose.position.y;
@@ -363,6 +363,7 @@ void Localizer::process()
                 odom_state.transform.translation.x = map2odom_x;
                 odom_state.transform.translation.y = map2odom_y;
                 odom_state.transform.rotation = map2odom_quat;
+
                 odom_state_broadcaster.sendTransform(odom_state);
 
 
