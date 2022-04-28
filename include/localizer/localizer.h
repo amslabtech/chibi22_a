@@ -69,6 +69,7 @@ class Localizer
         double estimated_pose_w_th;
         double reset_limit;
 
+        geometry_msgs::PoseStamped estimated_pose;
         double alpha = 0;
         double alpha_slow=alpha;
         double alpha_fast=alpha;
@@ -89,7 +90,7 @@ class Localizer
         sensor_msgs::LaserScan laser;
         nav_msgs::Odometry current_odometry;
         nav_msgs::Odometry previous_odometry;
-        geometry_msgs::PoseStamped estimated_pose;
+        // geometry_msgs::PoseStamped estimated_pose;
         geometry_msgs::PoseArray p_pose_array;
         std::vector<Particle>p_array;
 };
