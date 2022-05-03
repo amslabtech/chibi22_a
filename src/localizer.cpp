@@ -123,10 +123,21 @@ void Localizer::estimate_pose()
     double yaw=0;
     double w_max = 0;
     for(auto& p:p_array){
+
+
+        //もとのコード--------------------
         x+= p.p_pose.pose.position.x*p.w;
         y+= p.p_pose.pose.position.y*p.w;
+        //--------------------------------
+
         if(p.w>w_max){
             w_max=p.w;
+
+            //新コード---------------------
+            // x = p.p_pose.pose.position.x;
+            // y = p.p_pose.pose.position.y;
+            //--------------------------------------
+
             yaw=tf::getYaw(p.p_pose.pose.orientation);
         }
     }
@@ -209,6 +220,7 @@ double Localizer::calc_w(geometry_msgs::PoseStamped &pose)
     double yaw = tf::getYaw(pose.pose.orientation);
     for(int i=0, size=laser.ranges.size(); i<size; i+=laser_step){
         if(laser.ranges[i] > 0.2){
+            std::cout<<laser.ranges[i]<<std::endl;
             double angle = i*angle_increment+angle_min;
             double dist_to_wall=dist_from_p_to_wall(x, y, yaw+angle, laser.ranges[i]);
             weight += gaussian(laser.ranges[i], laser.ranges[i]*laser_noise_ratio, dist_to_wall);
@@ -286,7 +298,6 @@ void Localizer::process()
             // std::cout<<"particle nummber:"<<particle_number<<std::endl;
             // std::cout<<"dot size:"<<p_pose_array.poses.size()<<std::endl;
             // std::cout<<"p_array_dot size:"<<p_array.size()<<std::endl;
-            //
 
            try{
                double map_to_base_x = estimated_pose.pose.position.x;

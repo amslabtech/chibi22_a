@@ -4,6 +4,7 @@
     <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
 
+    <!-- <node pkg="chibi22_a" name="localizer_maekawa" type="localizer_maekawa" output="screen"> -->
     <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
         <param name="particle_number" value="150" type="int"/>
         <param name="hz" value="10" type="int"/>
@@ -16,7 +17,7 @@
         <param name="move_noise_ratio" value="0.1" type="double"/>
         <param name="laser_noise_ratio" value="0.1" type="double"/>
         <param name="search_range" value="40.0" type="double"/>
-        <param name="laser_step" value="10" type="int"/>
+        <param name="laser_step" value="5" type="int"/>
         <param name="alpha_slow_th" value="0.001" type="double"/>
         <param name="alpha_fast_th" value="0.1" type="double"/>
         <param name="reset_x_sigma" value="0.25" type="double"/>
@@ -28,14 +29,14 @@
         <param name="estimated_pose_w_th" value="1.0" type="double"/>
         <param name="reset_limit" value="50" type="int"/>
     </node>
-    <!-- <node pkg="rosbag" name="rosbag" type="play" args= " --clock /home/yoshiki/bagfiles/test1_2022-04-03-19-38-41.bag"/> -->
+        <node pkg="rosbag" name="rosbag" type="play" args= " --clock /home/yoshiki/bagfiles/test1_2022-04-03-19-38-41.bag"/>
     <node pkg="rviz" name="rviz" type="rviz" args="-d$(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
     <param name="use_sim_time" value="true" type="bool"/>
 
 
-    <node pkg="urg_node" name="lidar" type="urg_node" args="_ip_address:=192.168.1.221"/>
-    <node pkg="joy" name="joy_node" type="joy_node"/>
-    <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/>
+    <!-- <node pkg="urg_node" name="lidar" type="urg_node" args="_ip_address:=192.168.1.221"/> -->
+    <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
+    <!-- <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/> -->
 
 
 
