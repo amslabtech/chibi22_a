@@ -43,9 +43,9 @@ class  DynamicWindowApproach
         double min_v;
         double min_yawrate;
         double predict_time;
-        double cost_heading;
-        double cost_velocity;
-        double cost_obs;
+        double gain_heading;
+        double gain_velocity;
+        double gain_obs;
         double wait;
         double world;
         double distance;

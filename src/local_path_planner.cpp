@@ -5,14 +5,14 @@ DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
     private_nh.param("max_speed",max_speed,{1.0});
     private_nh.param("min_speed",min_speed,{0.0});
     private_nh.param("max_yawrate",max_yawrate,{0.8});
-    private_nh.param("max_accel",max_accel,{1.0});
+    private_nh.param("max_accel",max_accel,{1000.0});
     private_nh.param("max_dyawrate",max_dyawrate,{2.0});
     private_nh.param("dt",dt,{0.5});
     private_nh.param("predict_time",predict_time,{3.0});
-    private_nh.param("cost_heading",cost_heading,{1.0});
-    private_nh.param("cost_velocity",cost_velocity,{1.0});
-    private_nh.param("cost_obs",cost_obs,{1.0});
-    private_nh.param("world",world,{5.0});
+    private_nh.param("gain_heading",gain_heading,{1.0});
+    private_nh.param("gain_velocity",gain_velocity,{1.0});
+    private_nh.param("gain_obs",gain_obs,{1.0});
+    private_nh.param("world",world,{4.0});
     private_nh.param("safemass_x",safemass_x,{10});
     private_nh.param("safemass_y",safemass_y,{10});
     private_nh.param("distance",distance,{0.0});
@@ -135,9 +135,12 @@ void DynamicWindowApproach::calc_trajectory(const double &v, const double &omega
 //評価関数の計算
 double DynamicWindowApproach::calc_evaluation()
 {
-    double cost_heading = calc_cost_heading() * cost_heading;
-    double cost_velocity = calc_cost_velocity() * cost_velocity;
-    double cost_obs = calc_cost_obstacle() * cost_obs;
+    double cost_heading = calc_cost_heading() * gain_heading;
+    double cost_velocity = calc_cost_velocity() * gain_velocity;
+    //std::cout<<"obs"<<std::endl;
+    double cost_obs = calc_cost_obstacle() * gain_obs;
+    //std::cout<<"obs"<<std::endl;
+    // std::cout<<"heading,velocity,obstacle:"<<cost_heading<<","<<cost_velocity<<","<<cost_obs<<std::endl;
 
     double cost_total = cost_heading + cost_velocity + cost_obs;
 
@@ -152,12 +155,14 @@ double DynamicWindowApproach::calc_cost_heading()
     if(score_angle >  M_PI) score_angle -= 2*M_PI;
     if(score_angle < -M_PI) score_angle += 2*M_PI;
 
+    // std::cout<<std::abs(score_angle)/M_PI<<std::endl;
     return std::abs(score_angle)/M_PI;
 }
 
 //速度の評価関数
 double DynamicWindowApproach::calc_cost_velocity()
 {
+    // std::cout<<"velocity:"<<(max_speed-traj.back().v)/max_speed<<std::endl;
     return (max_speed - traj.back().v)/max_speed;
 }
 
@@ -176,7 +181,7 @@ double DynamicWindowApproach::calc_cost_obstacle()
         {
             for(int j = y-safemass_y; j<y+safemass_y; j++)
             {
-                if(i>0 && j>0 && (map[i][j] == 100))
+                if(i>0 && j>0 && i<row && j<column && (map[i][j] == 100))
                 {
                     a = double(-world/2 + i*resolution);
                     b = double(-world/2 + j*resolution);
@@ -189,7 +194,7 @@ double DynamicWindowApproach::calc_cost_obstacle()
 
                     if(distance <= 0.2)
                     {
-                        distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
+                        // distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
                         max_cost = 1e10;
                     }
                     if(dist_min >= distance)
@@ -200,8 +205,10 @@ double DynamicWindowApproach::calc_cost_obstacle()
             }
         }
     }
+    double dist_max = sqrt(pow(safemass_x,2)+pow(safemass_y,2));
+    // std::cout<<"max_cost:"<<max_cost<<","<<"1/dist_min"<<1.0/dist_min<<std::endl;
     if(max_cost>dist_min) return max_cost;
-    else return 1.0/dist_min;
+    else return 1.0-(dist_min/dist_max);
 }
 
 void DynamicWindowApproach::calc_final_input()
@@ -210,25 +217,34 @@ void DynamicWindowApproach::calc_final_input()
     best_traj.clear();
     final_cost = 0.0;
 
+    //std::cout<<"1"<<std::endl;
+
     for(double v = dw.min_v; v<=dw.max_v; v+=v_reso )
     {
         for(double omega = dw.min_yawrate; omega<=dw.max_yawrate; omega+=omega_reso)
         {
             calc_trajectory(v,omega);
+            //std::cout<<"2"<<std::endl;
             final_cost = calc_evaluation();
+            // std::cout<<final_cost<<std::endl;
+            //std::cout << "3"<<std::endl;
             if(min_cost >= final_cost)
             {
+                //std::cout<<"4"<<std::endl;
                 min_cost = final_cost;
                 min_v = v;
                 min_yawrate = omega;
                 best_traj = traj;
+                //std::cout<<"4"<<std::endl;
             }
-
             current_velocity = min_v;
             current_omega = min_yawrate;
+            //std::cout<<"5"<<std::endl;
         }
     }
+    std::cout<<"min_v:"<<min_v<<"min_yawrate"<<min_yawrate<<std::endl;
     visualize_traj();
+    //std::cout<<"6"<<std::endl;
 }
 
 void DynamicWindowApproach::visualize_traj()
@@ -256,26 +272,31 @@ void DynamicWindowApproach::roomba_control(double v,double yawrate)
 void DynamicWindowApproach::dwa_control()
 {
     create_dynamic_window();
+    //std::cout <<"win" << std::endl;
     calc_final_input();
+    //std::cout <<"input"<< std::endl;
 
     if(wait < 5)
     {
         roomba_control(0.0,0.0);
         wait++;
+        //std::cout <<"w"<<std::endl;
     }
     else
     {
         roomba_control(min_v,min_yawrate);
+        //std::cout <<"c"<<std::endl;
     }
 
     if(goal_reach())
     {
-        std::cout << "goal" << std::endl;
+        //std::cout << "goal" << std::endl;
         roomba_control(0.0,0.0);
     }
 
     if(dist_min == 1e10){
         roomba_control(0.0,0.0);
+        //std::cout << "d"<<std::endl;
     }
 }
 
