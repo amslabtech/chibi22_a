@@ -5,7 +5,7 @@ std::default_random_engine engine2(seed());
 
 Localizer::Localizer():private_nh("~")
 {
-    private_nh.param("hz", hz, {10});
+    private_nh.getParam("hz", hz);
     // map_callback
     private_nh.getParam("particle_number", particle_number);
     private_nh.getParam("init_x", init_x);
@@ -24,6 +24,7 @@ Localizer::Localizer():private_nh("~")
     private_nh.getParam("alpha_slow_th", alpha_slow_th);
     private_nh.getParam("alpha_fast_th", alpha_fast_th);
     private_nh.getParam("estimated_pose_w_th", estimated_pose_w_th);
+    private_nh.getParam("reset_th", reset_th);
     private_nh.getParam("reset_limit", reset_limit);
     private_nh.getParam("reset_x_sigma", reset_x_sigma);
     private_nh.getParam("reset_y_sigma", reset_y_sigma);
@@ -174,7 +175,7 @@ double Localizer::dist_from_p_to_wall(double x_start, double y_start, double yaw
             return dist_from_start;
         }
         if(map.data[map_index] == -1){
-            return search_range * 2;
+            return search_range * 3;
         }
     }
     return search_limit;
@@ -190,7 +191,7 @@ double Localizer::calc_w(geometry_msgs::PoseStamped &pose)
     double y = pose.pose.position.y;
     double yaw = tf::getYaw(pose.pose.orientation);
     for(int i=0, size=laser.ranges.size(); i<size; i+=laser_step){
-        if(laser.ranges[i] > 0.2){
+        if(laser.ranges[i] > ignore_laser){
             double angle = i * angle_increment + angle_min;
             double dist_to_wall = dist_from_p_to_wall(x, y, yaw + angle, laser.ranges[i]);
             weight += gaussian(laser.ranges[i], laser.ranges[i] * laser_noise_ratio, dist_to_wall);
@@ -220,10 +221,12 @@ void Localizer::estimate_pose()
     double yaw = 0;
     double w_max = 0;
     for(auto &p:p_array){
-        x += p.p_pose.pose.position.x * p.w;
-        y += p.p_pose.pose.position.y * p.w;
+        // x += p.p_pose.pose.position.x * p.w;
+        // y += p.p_pose.pose.position.y * p.w;
         if(p.w > w_max){
             w_max = p.w;
+            x = p.p_pose.pose.position.x;
+            y = p.p_pose.pose.position.y;
             yaw = tf::getYaw(p.p_pose.pose.orientation);
         }
     }
@@ -249,7 +252,7 @@ void Localizer::adaptive_resampling()
             r -= p_array[index].w;
             index = (index + 1) % particle_number;
         }
-        if(random(engine2) > reset_ratio){
+        if(reset_th > reset_ratio){
             Particle p = p_array[index];
             p.w = 1.0 / particle_number;
             p_array_after_resampling.push_back(p);
@@ -282,16 +285,8 @@ void Localizer::expansion_reset()
     }
 }
 
-// 観測更新
-void Localizer::observation_update()
+void Localizer::calc_alphas()
 {
-    for(auto &p:p_array){
-        double weight = calc_w(p.p_pose);
-        p.w = weight;
-    }
-    estimate_pose();
-    double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
-
     if(alpha_slow == 0){
         alpha_slow = alpha;
     }
@@ -305,11 +300,22 @@ void Localizer::observation_update()
     else{
         alpha_fast += alpha_fast_th * (alpha - alpha_fast);
     }
+}
+
+// 観測更新
+void Localizer::observation_update()
+{
+    for(auto &p:p_array){
+        double weight = calc_w(p.p_pose);
+        p.w = weight;
+    }
+    estimate_pose();
+    double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
+    calc_alphas();
 
     if(estimated_pose_w > estimated_pose_w_th || reset_count > reset_limit){
         reset_count = 0;
         adaptive_resampling();
-
     }
     else{
         reset_count += 1;

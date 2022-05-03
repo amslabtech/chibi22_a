@@ -44,12 +44,14 @@ class Localizer
         // laser
         double laser_noise_ratio;
         int laser_step;
+        double ignore_laser=0.2;
         double alpha_slow_th;
         double alpha_fast_th;
         double alpha = 0;
         double alpha_slow = alpha;
         double alpha_fast = alpha;
         double estimated_pose_w_th;
+        double reset_th;
         double reset_x_sigma;
         double reset_y_sigma;
         double reset_yaw_sigma;
@@ -80,6 +82,7 @@ class Localizer
         double calc_w(geometry_msgs::PoseStamped &pose);
         void normalize_w();
         void estimate_pose();
+        void calc_alphas();
         void adaptive_resampling();
         void expansion_reset();
         void observation_update();
