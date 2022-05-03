@@ -97,7 +97,7 @@ void AStarPath::thick_wall()
 
 void AStarPath::set_goal()
 {
-    goal = {{2000,2000},{2320,2000},{2320,2300},{2000,2290},{1660,2280},{1660,2000},{2000,2000}};
+    goal = {{2000,2000},{2320,2010},{2320,2290},{2000,2290},{1660,2280},{1660,2000},{2000,2000}};
 }
 
 //heuristic process that caluculate path to check point
@@ -193,9 +193,6 @@ void AStarPath::A_star()
                             close_list[x2][y2].pre_x = x;           //substitution now_x to pre_x
                             close_list[x2][y2].pre_y = y;           //substitution now_y to pre_y
                             close_list[x2][y2].g = 1;               //substitution
-                            
-                            std::cout<<"f : "<<f[j]<<std::endl;
-                            
                         }
                         else
                         {
