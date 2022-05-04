@@ -283,13 +283,12 @@ void AStarPath::process()
             map_check = false;
             path_check = true;
         }
-        pub_path.publish(global_path);
-        /*
+        
         if(path_check==true)
         {
             pub_path.publish(global_path);
         }
-        */
+        
         ros::spinOnce();
         loop_rate.sleep();
     }
