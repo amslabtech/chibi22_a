@@ -36,8 +36,8 @@ Localizer::Localizer():private_nh("~")
 
     // sub
     map_sub = nh.subscribe("/map", 1, &Localizer::map_callback, this);
-    odometry_sub = nh.subscribe("/roomba/odometry", 10, &Localizer::odometry_callback, this);
-    laser_sub = nh.subscribe("/scan", 10, &Localizer::laser_callback, this);
+    odometry_sub = nh.subscribe("/roomba/odometry", 1, &Localizer::odometry_callback, this);
+    laser_sub = nh.subscribe("/scan", 1, &Localizer::laser_callback, this);
 
     // map_callback
     p_pose_array.header.frame_id = "map";
@@ -51,8 +51,8 @@ Localizer::Localizer():private_nh("~")
     quaternionTFToMsg(tf::createQuaternionFromYaw(0.0), estimated_pose.pose.orientation);
 
     // pub
-    p_pose_array_pub = nh.advertise<geometry_msgs::PoseArray>("/p_pose_array", 10);
-    estimated_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/estimated_pose", 10);
+    p_pose_array_pub = nh.advertise<geometry_msgs::PoseArray>("/p_pose_array", 1);
+    estimated_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/estimated_pose", 1);
 }
 
 // Gaussian 乱数生成
@@ -166,7 +166,8 @@ int Localizer::xy_to_map_index(double x, double y)
 double Localizer::dist_from_p_to_wall(double x_start, double y_start, double yaw, double laser_range)
 {
     double search_step = map.info.resolution;
-    double search_limit = std::min(laser_range * (1.0 + laser_noise_ratio * 5), search_range);
+    // double search_limit = std::min(laser_range * (1.0 + laser_noise_ratio * 5), search_range);
+    double search_limit = laser_range * (1.0 + laser_noise_ratio * 5) * 2;
     for(double dist_from_start = search_step; dist_from_start <= search_limit; dist_from_start += search_step){
         double x_now = x_start + dist_from_start * cos(yaw);
         double y_now = y_start + dist_from_start * sin(yaw);
@@ -175,7 +176,7 @@ double Localizer::dist_from_p_to_wall(double x_start, double y_start, double yaw
             return dist_from_start;
         }
         if(map.data[map_index] == -1){
-            return search_range * 3;
+            return search_limit;
         }
     }
     return search_limit;
