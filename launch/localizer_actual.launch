@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+    <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
+        <param name="hz" value="10"/>
+        <param name="particle_number" value="100"/>
+        <param name="init_x" value="0.0"/>
+        <param name="init_y" value="0.0"/>
+        <param name="init_yaw" value="0.0"/>
+        <param name="init_x_sigma" value="0.7"/>
+        <param name="init_y_sigma" value="0.7"/>
+        <param name="init_yaw_sigma" value="0.7"/>
+        <param name="move_noise_ratio" value="0.1"/>
+        <param name="laser_noise_ratio" value="0.015"/>
+        <param name="laser_step" value="10"/>
+        <param name="alpha_slow_th" value="0.001"/>
+        <param name="alpha_fast_th" value="0.1"/>
+        <param name="estimated_pose_w_th" value="5.5"/>
+        <param name="reset_th" value="0.8"/>
+        <param name="reset_limit" value="50"/>
+        <param name="reset_x_sigma" value="0.15"/>
+        <param name="reset_y_sigma" value="0.15"/>
+        <param name="reset_yaw_sigma" value="0.15"/>
+        <param name="expansion_x_speed" value="0.03"/>
+        <param name="expansion_y_speed" value="0.03"/>
+        <param name="expansion_yaw_speed" value="0.03"/>
+        <param name="search_range" value="40"/>
+    </node>
+    <rosparam param="/use_sim_time">true</rosparam>
+    <node pkg="rosbag" name="play" type="play" args="--clock $(find chibi22_a)/src/test.bag"/>
+    <!-- <node name="urg_node" pkg="urg_node" type="urg_node"> -->
+    <!--     <param name="ip_address" value="192.168.1.222"/> -->
+    <!-- </node> -->
+    <!-- <node name="roomba_500driver_meiji" pkg="roomba_500driver_meiji" type="main500"/> -->
+    <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
+    <!-- <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/> -->
+    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer_check.rviz" output="screen"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser"/>
+</launch>
