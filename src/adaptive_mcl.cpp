@@ -405,7 +405,7 @@ void Localizer::observation_update()
     double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
     if(aug_switch){calc_alphas();}
 
-    if(estimated_pose_w > estimated_pose_w_th || reset_count > reset_limit){
+    if(estimated_pose_w > estimated_pose_w_th || reset_count > (p_array.size() * reset_limit)){
         reset_count = 0;
         if(aug_switch){augmented_resampling();}
     }
