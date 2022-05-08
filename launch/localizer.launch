@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 
 <launch>
-    <rosparam param="use_sim_time">true</rosparam>
     <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+    <rosparam param="use_sim_time">true</rosparam>
     <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
         <param name="hz" value="10"/>
         <param name="particle_number" value="500"/>
@@ -36,5 +36,4 @@
     </node>
     <node pkg="rosbag" name="rosbag" type="play" args="--clock /home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 base_link laser"/>
-    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
 </launch>
