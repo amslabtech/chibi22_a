@@ -9,9 +9,9 @@ DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
     private_nh.param("max_dyawrate",max_dyawrate,{2.0});
     private_nh.param("dt",dt,{0.5});
     private_nh.param("predict_time",predict_time,{3.0});
-    private_nh.param("cost_heading",cost_heading,{1.0});
-    private_nh.param("cost_velocity",cost_velocity,{1.0});
-    private_nh.param("cost_obs",cost_obs,{1.0});
+    private_nh.param("cost_heading",gain_heading,{1.0});
+    private_nh.param("cost_velocity",gain_velocity,{1.0});
+    private_nh.param("cost_obs",gain_obs,{1.0});
     private_nh.param("world",world,{5.0});
     private_nh.param("safemass_x",safemass_x,{10});
     private_nh.param("safemass_y",safemass_y,{10});
@@ -143,9 +143,9 @@ void DynamicWindowApproach::calc_trajectory(const double &v, const double &omega
 //評価関数の計算
 double DynamicWindowApproach::calc_evaluation()
 {
-    double cost_heading = calc_cost_heading() * cost_heading;
-    double cost_velocity = calc_cost_velocity() * cost_velocity;
-    double cost_obs = calc_cost_obstacle() * cost_obs;
+    double cost_heading = calc_cost_heading() * gain_heading;
+    double cost_velocity = calc_cost_velocity() * gain_velocity;
+    double cost_obs = calc_cost_obstacle() * gain_obs;
 
     double cost_total = cost_heading + cost_velocity + cost_obs;
 
@@ -234,8 +234,9 @@ double DynamicWindowApproach::calc_cost_obstacle()
             }
         }
     }
+    double dist_max = sqrt(pow(safemass_x,2)+pow(safemass_y,2));
     if(max_cost > dist_min) return max_cost;
-    else return 1.0/dist_min;
+    else return 1.0-(dist_min/dist_max);
 }
 
 void DynamicWindowApproach::calc_final_input()
