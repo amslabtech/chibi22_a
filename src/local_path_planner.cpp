@@ -174,44 +174,6 @@ double DynamicWindowApproach::calc_cost_velocity()
 //障害物の評価関数
 /*double DynamicWindowApproach::calc_cost_obstacle()
 {
-    dist_min = 1e3;
-    max_cost = 0.0;
-
-    for(auto& state : traj)
-    {
-        int x = (int)((state.x - (-world/2))/resolution);
-        int y = (int)((state.y - (-world/2))/resolution);
-
-        for(int i = x-safemass_x; i<x+safemass_x; i++)
-        {
-            for(int j = y-safemass_y; j<y+safemass_y; j++)
-            {
-                if(i>0 && j>0 && (map[i][j] == 100))
-                {
-                    a = double(-world/2 + i*resolution);
-                    b = double(-world/2 + j*resolution);
-
-                    distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
-                    if(b<0)
-                    {
-                        continue;
-                    }
-
-                    if(distance <= 0.2)
-                    {
-                        distance = sqrt(std::pow(state.x-a,2)+std::pow(state.y-b,2));
-                        max_cost = 1e10;
-                    }
-                    if(dist_min >= distance)
-                    {
-                        dist_min = distance;
-                    }
-                }
-            }
-        }
-    }
-    if(max_cost>dist_min) return max_cost;
-    else return 1.0/dist_min;
 }*/
 
 double DynamicWindowApproach::calc_cost_obstacle()
@@ -339,4 +301,5 @@ int main(int argc,char** argv)
     DWA.process();
     return 0;
 }
+
 
