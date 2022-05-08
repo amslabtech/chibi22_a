@@ -36,7 +36,7 @@
         <!-- <param name="laser_model_type" value="beam"/> -->
         <param name="laser_likelihood_max_dist" value="2.0"/>
         <param name="update_min_d" value="0.2"/>
-        <param name="update_min_a" value="0.5"/>
+        <param name="update_min_a" value="0.2"/>
         <param name="odom_frame_id" value="odom"/>
         <param name="resample_interval" value="1"/>
         <param name="transform_tolerance" value="0.1"/>
@@ -44,7 +44,7 @@
         <param name="recovery_alpha_fast" value="0.2"/>
     </node>
     <rosparam param="use_sim_time">true</rosparam>
-    <node pkg="rosbag" name="rosbag" type="play" args="--clock /home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
+    <node pkg="rosbag" name="rosbag" type="play" args="--clock -r 3 /home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 base_link laser"/>
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer.rviz" output="screen"/>
 </launch>
