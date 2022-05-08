@@ -2,16 +2,16 @@
 
 DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
 {
-    private_nh.param("max_speed",max_speed,{1.0});
+    private_nh.param("max_speed",max_speed,{0.2});
     private_nh.param("min_speed",min_speed,{0.0});
     private_nh.param("max_yawrate",max_yawrate,{0.8});
     private_nh.param("max_accel",max_accel,{1.0});
-    private_nh.param("max_dyawrate",max_dyawrate,{2.0});
+    private_nh.param("max_dyawrate",max_dyawrate,{1000.0});
     private_nh.param("dt",dt,{0.5});
     private_nh.param("predict_time",predict_time,{3.0});
     private_nh.param("gain_heading",gain_heading,{1.0});
     private_nh.param("gain_velocity",gain_velocity,{1.0});
-    private_nh.param("gain_obs",gain_obs,{1.0});
+    private_nh.param("gain_obs",gain_obs,{10.0});
     private_nh.param("world",world,{5.0});
     private_nh.param("safemass_x",safemass_x,{10});
     private_nh.param("safemass_y",safemass_y,{10});
@@ -147,6 +147,7 @@ double DynamicWindowApproach::calc_evaluation()
     double cost_velocity = calc_cost_velocity() * gain_velocity;
     double cost_obs = calc_cost_obstacle() * gain_obs;
 
+    std::cout<<"head:"<<cost_heading<<" vel:"<<cost_velocity<<" obs"<<cost_obs<<std::endl;
     double cost_total = cost_heading + cost_velocity + cost_obs;
 
     return cost_total;
@@ -160,6 +161,7 @@ double DynamicWindowApproach::calc_cost_heading()
     if(score_angle >  M_PI) score_angle -= 2*M_PI;
     if(score_angle < -M_PI) score_angle += 2*M_PI;
 
+    std::cout<<"score_angle"<<goal_theta<<std::endl;
     return std::abs(score_angle)/M_PI;
 }
 
@@ -215,6 +217,7 @@ double DynamicWindowApproach::calc_cost_velocity()
 double DynamicWindowApproach::calc_cost_obstacle()
 {
     dist_min=1e3;
+    max_cost=0.0;
     for(auto& state : traj)
     {
         for(auto& obstacle_pose : obstacle_poses.poses)
@@ -223,7 +226,6 @@ double DynamicWindowApproach::calc_cost_obstacle()
             double obstacle_y = obstacle_pose.position.y;
 
             double distance = std::sqrt(std::pow(obstacle_x-state.x,2)+std::pow(obstacle_y-state.y,2));
-
             if(distance<0.2)
             {
                 max_cost = 1e10;
