@@ -57,6 +57,5 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "local_goal_creator");
     LocalGoalCreator local_goal_creator;
     local_goal_creator.process();
-
     return 0;
 }
