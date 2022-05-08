@@ -9,9 +9,9 @@ DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
     private_nh.param("max_dyawrate",max_dyawrate,{2.0});
     private_nh.param("dt",dt,{0.5});
     private_nh.param("predict_time",predict_time,{3.0});
-    private_nh.param("cost_heading",gain_heading,{1.0});
-    private_nh.param("cost_velocity",gain_velocity,{1.0});
-    private_nh.param("cost_obs",gain_obs,{1.0});
+    private_nh.param("gain_heading",gain_heading,{1.0});
+    private_nh.param("gain_velocity",gain_velocity,{1.0});
+    private_nh.param("gain_obs",gain_obs,{1.0});
     private_nh.param("world",world,{5.0});
     private_nh.param("safemass_x",safemass_x,{10});
     private_nh.param("safemass_y",safemass_y,{10});
