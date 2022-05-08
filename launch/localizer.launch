@@ -5,27 +5,34 @@
     <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
     <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
-        <param name="particle_number" value="300"/>
+        <param name="hz" value="10"/>
+        <param name="particle_number" value="500"/>
         <param name="init_x" value="0.0"/>
         <param name="init_y" value="0.0"/>
         <param name="init_yaw" value="0.0"/>
         <param name="init_x_sigma" value="0.5"/>
         <param name="init_y_sigma" value="0.5"/>
         <param name="init_yaw_sigma" value="0.5"/>
-        <param name="move_noise_ratio" value="0.1"/>
-        <param name="laser_noise_ratio" value="0.05"/>
+        <param name="intercept" value="0.05"/>
+        <param name="random_noise" value="0.01"/>
+        <param name="delta" value="0.05"/>
+        <param name="epsilon" value="0.001"/>
+        <param name="move_noise_ratio" value="0.01"/>
+        <param name="laser_noise_ratio" value="0.015"/>
         <param name="laser_step" value="10"/>
         <param name="alpha_slow_th" value="0.001"/>
         <param name="alpha_fast_th" value="0.1"/>
-        <param name="estimated_pose_w_th" value="1.4"/>
-        <param name="reset_limit" value="50"/>
+        <param name="estimated_pose_w_th" value="5.5"/>
+        <param name="reset_limit" value="60"/>
         <param name="reset_x_sigma" value="0.1"/>
         <param name="reset_y_sigma" value="0.1"/>
         <param name="reset_yaw_sigma" value="0.1"/>
-        <param name="expansion_x_speed" value="0.01"/>
-        <param name="expansion_y_speed" value="0.01"/>
-        <param name="expansion_yaw_speed" value="0.01"/>
-        <param name="search_range" value="30"/>
+        <param name="expansion_x_speed" value="0.04"/>
+        <param name="expansion_y_speed" value="0.04"/>
+        <param name="expansion_yaw_speed" value="0.04"/>
+        <param name="search_range" value="40"/>
+        <param name="kld_switch" value="true"/>
+        <param name="aug_switch" value="true"/>
     </node>
     <node pkg="rosbag" name="rosbag" type="play" args="--clock /home/parallels/bag/test1_2022-04-03-19-38-41.bag"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 base_link laser"/>

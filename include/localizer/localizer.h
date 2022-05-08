@@ -37,6 +37,10 @@ class Localizer
         double init_x_sigma;
         double init_y_sigma;
         double init_yaw_sigma;
+        double intercept;
+        double random_noise;
+        double delta;
+        double epsilon;
         bool map_get_ok = false;
         // odometry
         double move_noise_ratio;
@@ -51,7 +55,6 @@ class Localizer
         double alpha_slow = alpha;
         double alpha_fast = alpha;
         double estimated_pose_w_th;
-        double reset_th;
         double reset_x_sigma;
         double reset_y_sigma;
         double reset_yaw_sigma;
@@ -61,6 +64,9 @@ class Localizer
         double reset_limit;
         int reset_count = 0;
         double search_range;
+
+        bool kld_switch = true;
+        bool aug_switch = true;
 
 
         // callback
@@ -72,9 +78,15 @@ class Localizer
         // map
         double gaussian(double mu, double sigma);
         double gaussian(double mu, double sigma, double x);
+        double liner(double x, double mu);
+        double w_noise(double mu, double sigma, double x);
+        double chi2(double x, double k);
+        int kld(double binnum);
+        double y(double k);
         double adjust_yaw(double yaw);
         Particle make_particle();
         // odometry
+        void kld_resampling(double dtrans, double drot1, double drot2);
         void motion_update();
         // laser
         int xy_to_map_index(double x, double y);
@@ -83,7 +95,7 @@ class Localizer
         void normalize_w();
         void estimate_pose();
         void calc_alphas();
-        void adaptive_resampling();
+        void augmented_resampling();
         void expansion_reset();
         void observation_update();
 

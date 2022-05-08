@@ -28,7 +28,6 @@ Localizer::Localizer():private_nh("~")
     private_nh.getParam("alpha_slow_th", alpha_slow_th);
     private_nh.getParam("alpha_fast_th", alpha_fast_th);
     private_nh.getParam("estimated_pose_w_th", estimated_pose_w_th);
-    private_nh.getParam("reset_th", reset_th);
     private_nh.getParam("reset_limit", reset_limit);
     private_nh.getParam("reset_x_sigma", reset_x_sigma);
     private_nh.getParam("reset_y_sigma", reset_y_sigma);
@@ -37,6 +36,9 @@ Localizer::Localizer():private_nh("~")
     private_nh.getParam("expansion_y_speed", expansion_y_speed);
     private_nh.getParam("expansion_yaw_speed", expansion_yaw_speed);
     private_nh.getParam("search_range", search_range);
+
+    private_nh.getParam("kld_switch", kld_switch);
+    private_nh.getParam("aug_switch", aug_switch);
 
     // sub
     map_sub = nh.subscribe("/map", 1, &Localizer::map_callback, this);
@@ -90,31 +92,33 @@ double Localizer::w_noise(double mu, double sigma, double x)
     return ans;
 }
 
-double Localizer::chi2(double x, int k)
+double Localizer::chi2(double x, double k)
 {
     double ans = (1 / (std::pow(2, k/2.0) * std::tgamma(k/2.0))) * std::pow(x, (k/2.0)-1) * exp(-x/2.0);
     return ans;
 }
 
-double Localizer::y(int k)
+double Localizer::y(double k)
 {
     double x = 0;
     double dx = 0.01;
     double sum = 0;
-    while(sum <= 1-delta){
+    while(sum <= 1.0-delta){
         sum += chi2(x, k);
+        // std::cout << "sum:" << sum << std::endl;
         x += dx;
     }
-    std::cout << "x:" << x << std::endl;
+    // std::cout << "x:" << x << std::endl;
     return x;
 }
 
-int Localizer::kld(int binnum)
+int Localizer::kld(double binnum)
 {
     if(binnum <= 1){
-        return p_array.size();
+        binnum = 2;
     }
     int p_num = std::ceil(y(binnum-1) / (2*epsilon));
+    // int p_num = (int)(chi2(1-delta, binnum-1) / (2*epsilon));
     return p_num;
 }
 
@@ -176,6 +180,39 @@ void Localizer::Particle::p_move(double dtrans, double drot1, double drot2)
 
 }
 
+void Localizer::kld_resampling(double dtrans, double drot1, double drot2)
+{
+    std::uniform_real_distribution<> random(0.0, 1.0);
+    double r = random(engine2);
+    int index = 0;
+    std::vector<Particle> tmp_p_array;
+    std::set<int> bin_list = {};
+    int p_num = p_array.size();
+    while(p_num>=tmp_p_array.size() && tmp_p_array.size()<particle_number){
+        r += 1.0 / p_array.size();
+        while(r > p_array[index].w){
+            r -= p_array[index].w;
+            index = (index + 1) % p_array.size();
+        }
+
+        Particle p = p_array[index];
+        p.p_move(dtrans, drot1, drot2);
+        double x = p.p_pose.pose.position.x;
+        double y = p.p_pose.pose.position.y;
+        int map_index = xy_to_map_index(x, y);
+
+        bin_list.insert(map_index);
+        double binnum = bin_list.size();
+        p_num = kld(binnum);
+        // std::cout << "binnum:" << binnum << std::endl;
+        // std::cout << "p_num:" << p_num << std::endl;
+        tmp_p_array.push_back(p);
+        // std::cout << tmp_p_array.size() << std::endl;
+    }
+    p_array = tmp_p_array;
+    // std::cout << tmp_p_array.size() << std::endl;
+}
+
 // 動作更新
 void Localizer::motion_update()
 {
@@ -188,10 +225,12 @@ void Localizer::motion_update()
     double drot1 = adjust_yaw(atan2(dy, dx) - previous_yaw);
     double drot2 = adjust_yaw(dyaw - drot1);
 
-
-    for(auto &p:p_array){
-        p.p_move(dtrans, drot1, drot2);
-
+    if(kld_switch){
+        kld_resampling(dtrans, drot1, drot2);
+    }else{
+        for(auto &p:p_array){
+            p.p_move(dtrans, drot1, drot2);
+        }
     }
 }
 
@@ -287,8 +326,7 @@ void Localizer::estimate_pose()
     quaternionTFToMsg(tf::createQuaternionFromYaw(yaw), estimated_pose.pose.orientation);
 }
 
-// リサンプリング
-void Localizer::adaptive_resampling()
+void Localizer::augmented_resampling()
 {
     std::uniform_real_distribution<> random(0.0, 1.0);
 
@@ -297,29 +335,31 @@ void Localizer::adaptive_resampling()
     double reset_ratio = 1 - (alpha_fast / alpha_slow);
     std::vector<Particle> p_array_after_resampling;
     p_array_after_resampling.reserve(p_array.size());
-    for(int i=0, size=p_array.size(); i<size; ++i){
-        r += 1.0 / particle_number;
+    double reset_coef = std::max(0.0, reset_ratio);
+    int reset_quantity = (int)(reset_coef * p_array.size());
+    for(int i=0, size=p_array.size() - reset_quantity; i<size; ++i){
+        r += 1.0 / p_array.size();
         while(r > p_array[index].w){
             r -= p_array[index].w;
-            index = (index + 1) % particle_number;
+            index = (index + 1) % p_array.size();
         }
-        if(reset_th > reset_ratio){
-            Particle p = p_array[index];
-            p.w = 1.0 / particle_number;
-            p_array_after_resampling.push_back(p);
-        }
-        else{
-            Particle p = p_array[index];
-            p.w = 1.0 / particle_number;
+        Particle p = p_array[index];
+        p.w = 1.0 / particle_number;
+        p_array_after_resampling.push_back(p);
+    }
 
-            double x = estimated_pose.pose.position.x;
-            double y = estimated_pose.pose.position.y;
-            double yaw = tf::getYaw(estimated_pose.pose.orientation);
+    for(int i=0, size=reset_quantity; i<size; i++){
 
-            p.set_p(x, y, yaw, reset_x_sigma, reset_y_sigma, reset_yaw_sigma);
+        Particle p = p_array[0];
+        p.w = 1.0 / p_array.size();
 
-            p_array_after_resampling.push_back(p);
-        }
+        double x = estimated_pose.pose.position.x;
+        double y = estimated_pose.pose.position.y;
+        double yaw = tf::getYaw(estimated_pose.pose.orientation);
+
+        p.set_p(x, y, yaw, reset_x_sigma, reset_y_sigma, reset_yaw_sigma);
+
+        p_array_after_resampling.push_back(p);
     }
     p_array = p_array_after_resampling;
 }
@@ -363,11 +403,11 @@ void Localizer::observation_update()
     }
     estimate_pose();
     double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
-    calc_alphas();
+    if(aug_switch){calc_alphas();}
 
     if(estimated_pose_w > estimated_pose_w_th || reset_count > reset_limit){
         reset_count = 0;
-        adaptive_resampling();
+        if(aug_switch){augmented_resampling();}
     }
     else{
         reset_count += 1;

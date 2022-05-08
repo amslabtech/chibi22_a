@@ -101,20 +101,22 @@ double Localizer::y(int k)
     double x = 0;
     double dx = 0.01;
     double sum = 0;
-    while(sum <= 1-delta){
+    while(sum <= 1.0-delta){
         sum += chi2(x, k);
+        // std::cout << "sum:" << sum << std::endl;
         x += dx;
     }
-    std::cout << "x:" << x << std::endl;
+    // std::cout << "x:" << x << std::endl;
     return x;
 }
 
 int Localizer::kld(int binnum)
 {
-    if(binnum <= 1){
-        return p_array.size();
+    if(binnum <= 3){
+        binnum = 3;
     }
     int p_num = std::ceil(y(binnum-1) / (2*epsilon));
+    // int p_num = (int)(chi2(1-delta, binnum-1) / (2*epsilon));
     return p_num;
 }
 
@@ -176,6 +178,39 @@ void Localizer::Particle::p_move(double dtrans, double drot1, double drot2)
 
 }
 
+void Localizer::kld_resampling(double dtrans, double drot1, double drot2)
+{
+    std::uniform_real_distribution<> random(0.0, 1.0);
+    double r = random(engine2);
+    int index = 0;
+    std::vector<Particle> tmp_p_array;
+    std::set<int> bin_list = {};
+    int p_num = p_array.size();
+    while(p_num>=tmp_p_array.size() && tmp_p_array.size()<particle_number){
+        r += 1.0 / p_array.size();
+        while(r > p_array[index].w){
+            r -= p_array[index].w;
+            index = (index + 1) % p_array.size();
+        }
+
+        Particle p = p_array[index];
+        p.p_move(dtrans, drot1, drot2);
+        double x = p.p_pose.pose.position.x;
+        double y = p.p_pose.pose.position.y;
+        int map_index = xy_to_map_index(x, y);
+
+        bin_list.insert(map_index);
+        int binnum = bin_list.size();
+        p_num = kld(binnum);
+        // std::cout << "binnum:" << binnum << std::endl;
+        // std::cout << "p_num:" << p_num << std::endl;
+        tmp_p_array.push_back(p);
+        // std::cout << tmp_p_array.size() << std::endl;
+    }
+    p_array = tmp_p_array;
+    // std::cout << tmp_p_array.size() << std::endl;
+}
+
 // 動作更新
 void Localizer::motion_update()
 {
@@ -188,11 +223,11 @@ void Localizer::motion_update()
     double drot1 = adjust_yaw(atan2(dy, dx) - previous_yaw);
     double drot2 = adjust_yaw(dyaw - drot1);
 
+    kld_resampling(dtrans, drot1, drot2);
 
-    for(auto &p:p_array){
-        p.p_move(dtrans, drot1, drot2);
-
-    }
+    // for(auto &p:p_array){
+    //     p.p_move(dtrans, drot1, drot2);
+    // }
 }
 
 void Localizer::odometry_callback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -297,29 +332,31 @@ void Localizer::adaptive_resampling()
     double reset_ratio = 1 - (alpha_fast / alpha_slow);
     std::vector<Particle> p_array_after_resampling;
     p_array_after_resampling.reserve(p_array.size());
-    for(int i=0, size=p_array.size(); i<size; ++i){
-        r += 1.0 / particle_number;
+    double reset_coef = std::max(0.0, reset_ratio);
+    int reset_quantity = (int)(reset_coef * p_array.size());
+    for(int i=0, size=p_array.size() - reset_quantity; i<size; ++i){
+        r += 1.0 / p_array.size();
         while(r > p_array[index].w){
             r -= p_array[index].w;
-            index = (index + 1) % particle_number;
+            index = (index + 1) % p_array.size();
         }
-        if(reset_th > reset_ratio){
-            Particle p = p_array[index];
-            p.w = 1.0 / particle_number;
-            p_array_after_resampling.push_back(p);
-        }
-        else{
-            Particle p = p_array[index];
-            p.w = 1.0 / particle_number;
+        Particle p = p_array[index];
+        p.w = 1.0 / particle_number;
+        p_array_after_resampling.push_back(p);
+    }
 
-            double x = estimated_pose.pose.position.x;
-            double y = estimated_pose.pose.position.y;
-            double yaw = tf::getYaw(estimated_pose.pose.orientation);
+    for(int i=0, size=reset_quantity; i<size; i++){
 
-            p.set_p(x, y, yaw, reset_x_sigma, reset_y_sigma, reset_yaw_sigma);
+        Particle p = p_array[0];
+        p.w = 1.0 / p_array.size();
 
-            p_array_after_resampling.push_back(p);
-        }
+        double x = estimated_pose.pose.position.x;
+        double y = estimated_pose.pose.position.y;
+        double yaw = tf::getYaw(estimated_pose.pose.orientation);
+
+        p.set_p(x, y, yaw, reset_x_sigma, reset_y_sigma, reset_yaw_sigma);
+
+        p_array_after_resampling.push_back(p);
     }
     p_array = p_array_after_resampling;
 }

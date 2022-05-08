@@ -140,7 +140,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/chibi22_a_node.cpp)
 
 
-add_executable(localizer src/localizer.cpp)
+add_executable(localizer src/adaptive_mcl.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use

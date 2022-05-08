@@ -23,9 +23,9 @@
         <param name="reset_x_sigma" value="0.15"/>
         <param name="reset_y_sigma" value="0.15"/>
         <param name="reset_yaw_sigma" value="0.15"/>
-        <param name="expansion_x_speed" value="0.03"/>
-        <param name="expansion_y_speed" value="0.03"/>
-        <param name="expansion_yaw_speed" value="0.03"/>
+        <param name="expansion_x_speed" value="0.02"/>
+        <param name="expansion_y_speed" value="0.02"/>
+        <param name="expansion_yaw_speed" value="0.02"/>
         <param name="search_range" value="40"/>
     </node>
     <rosparam param="/use_sim_time">true</rosparam>
