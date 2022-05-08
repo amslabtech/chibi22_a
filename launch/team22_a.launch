@@ -5,6 +5,7 @@
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
     <node pkg="chibi22_a" type="global_path_planner" name="global_path_planner" output="screen"/>
     <node pkg="chibi22_a" type="local_goal_creator" name="local_goal_creator">
+        <remap from="/global_path" to="path"/>
         <param name="hz" value="10"/>
         <param name="local_goal_dist" value="1.0"/>
     </node>
