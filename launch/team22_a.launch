@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+    <node pkg="chibi22_a" type="global_path_planner" name="global_path_planner" output="screen"/>
+    <node pkg="chibi22_a" type="local_goal_creator" name="local_goal_creator">
+        <param name="hz" value="10"/>
+        <param name="local_goal_dist" value="1.0"/>
+    </node>
+
+    <node pkg = "chibi22_a" name = "local_map_creator" type = "local_map_creator" output="screen">
+        <param name = "hz" type = "int" value = "10"/>
+        <param name = "map_size" type = "double" value = "4"/>
+        <param name = "laser_density" type = "double" value = "1.5"/>
+        <param name = "ignore_angle_mergin" type = "double" value = "0.2"/>
+        <param name = "map_reso" type = "double" value = "0.05"/>
+        <param name = "roomba_radius" type = "double" value = "0.2"/>
+    </node>
+    <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
+        <param name="hz" value="10"/>
+        <param name="particle_number" value="100"/>
+        <param name="init_x" value="0.0"/>
+        <param name="init_y" value="0.0"/>
+        <param name="init_yaw" value="0.0"/>
+        <param name="init_x_sigma" value="0.7"/>
+        <param name="init_y_sigma" value="0.7"/>
+        <param name="init_yaw_sigma" value="0.7"/>
+        <param name="move_noise_ratio" value="0.1"/>
+        <param name="laser_noise_ratio" value="0.015"/>
+        <param name="laser_step" value="10"/>
+        <param name="alpha_slow_th" value="0.001"/>
+        <param name="alpha_fast_th" value="0.1"/>
+        <param name="estimated_pose_w_th" value="5.5"/>
+        <param name="reset_th" value="0.8"/>
+        <param name="reset_limit" value="50"/>
+        <param name="reset_x_sigma" value="0.15"/>
+        <param name="reset_y_sigma" value="0.15"/>
+        <param name="reset_yaw_sigma" value="0.15"/>
+        <param name="expansion_x_speed" value="0.03"/>
+        <param name="expansion_y_speed" value="0.03"/>
+        <param name="expansion_yaw_speed" value="0.03"/>
+        <param name="search_range" value="40"/>
+    </node>
+    <node pkg="chibi22_a" type="local_path_planner" name="local_path_planner" output="screen">
+        <remap from="/pose" to="/estimated_pose"/>
+        <param name="safemass_x" value="20"/>
+        <param name="safemass_y" value="20"/>
+        <param name="gain_heading" value="1.0"/>
+        <param name="gain_velocity" value="1.0"/>
+        <param name="gain_obs" value="10.0"/>
+    </node>
+
+    <node pkg="urg_node" type="urg_node" name="urg_node" args="_ip_address:=192.168.1.221"/>
+    <node pkg="roomba_500driver_meiji" name="roomba_500driver_meiji" type="main500"/>
+
+    <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find chibi22_a)/config/rviz/globapathplanner.rviz"/> -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser"/>
+</launch>
