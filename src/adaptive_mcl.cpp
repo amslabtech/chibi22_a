@@ -76,9 +76,9 @@ double Localizer::gaussian(double mu, double sigma, double x)
 }
 
 //liner
-double Localizer::liner(double x, double mu)
+double Localizer::liner(double x, double sigma)
 {
-    double slope = -intercept / mu;
+    double slope = -intercept / (5 * sigma);
     return slope * x + intercept;
 }
 
@@ -86,7 +86,7 @@ double Localizer::liner(double x, double mu)
 double Localizer::w_noise(double mu, double sigma, double x)
 {
     double ans = gaussian(mu, sigma, x);
-    double liner_ans = liner(x, mu);
+    double liner_ans = liner(x, sigma);
     if(liner_ans > ans){ans = liner_ans;}
     if(random_noise > ans){ans = random_noise;}
     return ans;

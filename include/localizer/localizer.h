@@ -78,7 +78,7 @@ class Localizer
         // map
         double gaussian(double mu, double sigma);
         double gaussian(double mu, double sigma, double x);
-        double liner(double x, double mu);
+        double liner(double x, double sigma);
         double w_noise(double mu, double sigma, double x);
         double chi2(double x, double k);
         int kld(double binnum);
