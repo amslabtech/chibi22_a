@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+<<<<<<< HEAD
+=======
+
+>>>>>>> e55629099c16452b961047427799315ced5e5f9b
     <arg name="filename" default=""/>
     <arg name="lidar" default="222"/>
     <node pkg="joy" name="joy_node" type="joy_node"/>
