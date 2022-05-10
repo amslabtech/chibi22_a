@@ -6,7 +6,7 @@
     <!-- <rosparam param="use_sim_time">true</rosparam> -->
     <node pkg="chibi22_a" name="localizer" type="localizer" output="screen">
         <param name="hz" value="10"/>
-        <param name="particle_number" value="1000"/>
+        <param name="particle_number" value="500"/>
         <param name="init_x" value="0.0"/>
         <param name="init_y" value="0.0"/>
         <param name="init_yaw" value="0.0"/>
@@ -31,7 +31,7 @@
         <param name="expansion_y_speed" value="0.04"/>
         <param name="expansion_yaw_speed" value="0.04"/>
         <param name="search_range" value="40"/>
-        <param name="kld_switch" value="false"/>
+        <param name="kld_switch" value="true"/>
         <param name="aug_switch" value="true"/>
     </node>
     <!-- <node pkg="rosbag" name="rosbag" type="play" args=" /home/parallels/bag/test1_2022-04-03-19-38-41.bag -clock "/> -->

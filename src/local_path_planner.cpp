@@ -28,6 +28,8 @@ DynamicWindowApproach::DynamicWindowApproach():private_nh("~")
     private_nh.param("goal_tolerance",goal_tolerance,{0.3});
     private_nh.param("wait",wait,{0.0});
     private_nh.param("hz",hz,{10});
+    private_nh.param("count",count,{0});
+    private_nh.param("rf",rf,{0});
 
     sub_local_goal = nh.subscribe("local_goal",10,&DynamicWindowApproach::local_goal_callback,this);
     sub_pose = nh.subscribe("pose",10,&DynamicWindowApproach::pose_callback,this);
@@ -273,9 +275,32 @@ void DynamicWindowApproach::dwa_control()
         std::cout << "goal" << std::endl;
         roomba_control(0.0,0.0);
     }
+    if(count>0&&min_v>=0&&min_yawrate>1e-10){
+        if(count>=60){
+            rf++;
+        }
+        count=0;
+    }
 
-    if(dist_min == 1e10){
-        roomba_control(0.0,0.0);
+
+    if(min_v==0&&min_yawrate<=1e-10){
+        count++;
+        if(rf%2==0&&count>=60){
+            if(count%180>=60){
+                roomba_control(0.0,0.2);
+            }
+            if(count%180<60){
+                roomba_control(0.0,-0.2);
+            }
+        }
+        if(rf%2==1&&count>=60){
+            if(count%180>=60){
+                roomba_control(0.0,-0.2);
+            }
+            if(count%180<60){
+                roomba_control(0.0,0.2);
+            }
+        }
     }
 }
 

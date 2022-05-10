@@ -48,6 +48,8 @@ class  DynamicWindowApproach
         double gain_velocity;
         double gain_obs;
         double wait;
+        int count;
+        int rf;
         double world;
         double distance;
         double dist_min;
