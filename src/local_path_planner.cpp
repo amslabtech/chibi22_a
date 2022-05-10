@@ -275,7 +275,7 @@ void DynamicWindowApproach::dwa_control()
         std::cout << "goal" << std::endl;
         roomba_control(0.0,0.0);
     }
-    if(count>0&&min_v>=0&&min_yawrate>1e-10){
+    if(count>0&&min_v>=0&&min_yawrate>1e-10){//身動き取れなくなって少ししたら首振り
         if(count>=60){
             rf++;
         }
