@@ -290,7 +290,7 @@ void DynamicWindowApproach::dwa_control()
                 roomba_control(0.0,0.35);
             }
             if(count%120+40<60){
-                roomba_control(0.0,-0.35;
+                roomba_control(0.0,-0.35);
             }
         }
         if(rf%2==1&&count>=20){//首を振る際、初めに首を振る方向を交互にする
