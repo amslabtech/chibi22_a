@@ -50,7 +50,7 @@
         <param name="safemass_y" value="5"/>
         <param name="gain_heading" value="1.0"/>
         <param name="gain_velocity" value="1.0"/>
-        <param name="gain_obs" value="10.0"/>
+        <param name="gain_obs" value="5.0"/>
         <param name="max_speed" value="0.2"/>
     </node>
 
