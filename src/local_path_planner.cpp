@@ -275,8 +275,8 @@ void DynamicWindowApproach::dwa_control()
         std::cout << "goal" << std::endl;
         roomba_control(0.0,0.0);
     }
-    if(count>0&&min_v>=0&&min_yawrate>1e-10){//身動き取れなくなって少ししたら首振り
-        if(count>=60){
+    if(count>0&&min_v>=0&&min_yawrate>1e-10){//身動き取れなくなって2秒したら首振り
+        if(count>=20){
             rf++;
         }
         count=0;
@@ -285,20 +285,20 @@ void DynamicWindowApproach::dwa_control()
 
     if(min_v==0&&min_yawrate<=1e-10){
         count++;
-        if(rf%2==0&&count>=60){
-            if(count%180>=60){
-                roomba_control(0.0,0.2);
+        if(rf%2==0&&count>=20){//24秒周期で首振り
+            if(count%120+40>=60){
+                roomba_control(0.0,0.35);
             }
-            if(count%180<60){
-                roomba_control(0.0,-0.2);
+            if(count%120+40<60){
+                roomba_control(0.0,-0.35;
             }
         }
-        if(rf%2==1&&count>=60){
-            if(count%180>=60){
-                roomba_control(0.0,-0.2);
+        if(rf%2==1&&count>=20){//首を振る際、初めに首を振る方向を交互にする
+            if(count%120+40>=60){
+                roomba_control(0.0,-0.35);
             }
-            if(count%180<60){
-                roomba_control(0.0,0.2);
+            if(count%120+40<60){
+                roomba_control(0.0,0.35);
             }
         }
     }

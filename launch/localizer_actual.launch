@@ -36,7 +36,7 @@
     <!-- <rosparam param="/use_sim_time">true</rosparam> -->
     <!-- <node pkg="rosbag" name="play" type="play" args="clock $(find chibi22_a)/src/test.bag"/> -->
     <node name="urg_node" pkg="urg_node" type="urg_node">
-        <param name="ip_address" value="192.168.1.222"/>
+        <param name="ip_address" value="192.168.1.221"/>
     </node>
     <node name="roomba_500driver_meiji" pkg="roomba_500driver_meiji" type="main500"/>
     <node pkg="joy" name="joy_node" type="joy_node"/>
