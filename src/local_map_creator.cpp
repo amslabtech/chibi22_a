@@ -58,7 +58,7 @@ bool Local_map_creator::check_map_range(double x, double y){        //地図の�
     }
 }
 
-bool Local_map_creator::is_ignore_angle(double angle){      //建物の柱を無視する、以下の条件のときは全部false
+bool Local_map_creator::is_ignore_angle(double angle){      //ロボット自体の柱を無視する、以下の条件のときは全部false
     if(angle > -3.0/4 * M_PI + ignore_angle_mergin && angle < -1.0/4 * M_PI - ignore_angle_mergin){     //角度で判定
        return false;
    } else if(angle > -1.0/4 * M_PI + ignore_angle_mergin && angle < 1.0/4 * M_PI - ignore_angle_mergin){
