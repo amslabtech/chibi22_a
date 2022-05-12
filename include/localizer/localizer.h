@@ -27,6 +27,14 @@ class Localizer
              private:
                 Localizer* mcl;
         };
+        //
+        // ------------------new code-----------------------------
+        // geometry_msgs::PoseStamped p_pose;
+        // double w;
+        // void set_p(double x, double y, double yaw, double x_sigma, double y_sigma, double yaw_sigma);
+        // void p_move(double dtrans, double drot1, double drot2);
+        //
+        //-----------------------------------------------------------
         void laser_callback(const sensor_msgs::LaserScan::ConstPtr &msg);
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg);
         void odometry_callback(const nav_msgs::Odometry::ConstPtr &msg);
