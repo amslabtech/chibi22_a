@@ -336,7 +336,8 @@ void Localizer::augmented_resampling()
     std::vector<Particle> p_array_after_resampling;
     p_array_after_resampling.reserve(p_array.size());
     double reset_coef = std::max(0.0, reset_ratio);
-    int reset_quantity = (int)(reset_coef * p_array.size());
+    int reset_quantity = 0;
+    if(aug_switch){int reset_quantity = (int)(reset_coef * p_array.size());}
     for(int i=0, size=p_array.size() - reset_quantity; i<size; ++i){
         r += 1.0 / p_array.size();
         while(r > p_array[index].w){
@@ -403,11 +404,11 @@ void Localizer::observation_update()
     }
     estimate_pose();
     double estimated_pose_w = calc_w(estimated_pose) / (laser.ranges.size() / laser_step);
-    if(aug_switch){calc_alphas();}
+    calc_alphas();
 
     if(estimated_pose_w > estimated_pose_w_th || reset_count > (p_array.size() * reset_limit)){
         reset_count = 0;
-        if(aug_switch){augmented_resampling();}
+        augmented_resampling();
     }
     else{
         reset_count += 1;
