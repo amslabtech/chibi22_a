@@ -23,7 +23,7 @@ void AStarPath::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
         the_map = *msg;
         row = the_map.info.height;          //row = 4000
         col = the_map.info.width;           //col = 4000
-        map_grid = std::vector<std::vector<int>>(row,std::vector<int>(col,0));
+        map_grid = std::vector< std::vector<int> >(row,std::vector<int>(col,0));
         map_grid_copy = std::vector<std::vector<int>>(row,std::vector<int>(col,0));
 
         //change 1D the_map to 2D

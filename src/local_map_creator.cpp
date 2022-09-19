@@ -1,3 +1,4 @@
+#include <ros/ros.h>
 #include <local_map_creator/local_map_creator.h>
 
 Local_map_creator::Local_map_creator():private_nh("~"){
@@ -99,7 +100,7 @@ void Local_map_creator::create_local_map(){     //create lineは一本のせん�
     //1080本のレーザーが出てるけど全部使うと処理が重い。実際にはレーザーの精度は5㎝くらいだから無駄になるレーザーの本数を最初から減らしておくことで
     //処理を軽くすることができる。
     //laser_densityはレーザーの密度に関する変数。
-    int laser_step = int(2 * map_reso * laser.ranges.size() / laser_density / scan_angle / map_size);       
+    int laser_step = int(2 * map_reso * laser.ranges.size() / laser_density / scan_angle / map_size);
     for(int i=0; i<int(laser.ranges.size()); i+=laser_step){
         double angle = i * laser.angle_increment + laser.angle_min;
         create_line(angle, laser.ranges[i]);

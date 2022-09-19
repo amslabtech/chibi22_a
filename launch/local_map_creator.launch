@@ -13,4 +13,6 @@
     <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
     <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
     <node pkg="rviz" name="rviz" type="rviz" args="-d$(find chibi22_a)/config/rviz/local_map_creator.rviz" output="screen"/>
+    <node pkg="rosbag" name="play" type="play" args="--clock -r 3 /home/yoshiki/bagfiles/test1_2022-04-03-19-38-41.bag"/>
+    <rosparam param="/use_sim_time">true</rosparam>
 </launch>

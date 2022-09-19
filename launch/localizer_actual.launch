@@ -33,14 +33,14 @@
         <param name="kld_switch" value="false"/>
         <param name="aug_switch" value="true"/>
     </node>
-    <!-- <rosparam param="/use_sim_time">true</rosparam> -->
-    <!-- <node pkg="rosbag" name="play" type="play" args="clock $(find chibi22_a)/src/test.bag"/> -->
-    <node name="urg_node" pkg="urg_node" type="urg_node">
-        <param name="ip_address" value="192.168.1.222"/>
-    </node>
-    <node name="roomba_500driver_meiji" pkg="roomba_500driver_meiji" type="main500"/>
-    <node pkg="joy" name="joy_node" type="joy_node"/>
-    <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/>
+    <rosparam param="/use_sim_time">true</rosparam>
+    <node pkg="rosbag" name="play" type="play" args="--clock -r 3 /home/yoshiki/bagfiles/test.bag"/>
+    <!-- <node name="urg_node" pkg="urg_node" type="urg_node"> -->
+        <!-- <param name="ip_address" value="192.168.1.222"/> -->
+    <!-- </node> -->
+    <!-- <node name="roomba_500driver_meiji" pkg="roomba_500driver_meiji" type="main500"/> -->
+    <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
+    <!-- <node pkg="roomba_teleop_meiji" type="electric_joystick_drive" name="electric_joystick_drive"/> -->
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find chibi22_a)/config/rviz/localizer_check.rviz" output="screen"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser"/>
 </launch>

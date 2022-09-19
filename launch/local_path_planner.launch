@@ -10,7 +10,14 @@
         <param name="gain_obs" value="10.0"/>
     </node>
 
-    <node pkg="urg_node" type="urg_node" name="urg_node" args="_ip_address:=192.168.1.221"/>
-    <node pkg="roomba_500driver_meiji" name="roomba_500driver_meiji" type="main500"/>
-    <!-- /* <node pkg="rviz" type="rviz" name="rviz" args="-d $(find chibi22_a)/config/rviz/localpathplanner.rviz"/> */ -->
+    <arg name="map_file" default="$(find chibi22_a)/map/map.yaml"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+
+    <rosparam param="/use_sim_time">true</rosparam>
+    <node pkg="rosbag" name="play" type="plat" args="--clock -r 3 /home/yoshiki/bagfiles/test.bag"/>
+
+
+    <!-- <node pkg="urg_node" type="urg_node" name="urg_node" args="_ip_address:=192.168.1.221"/> -->
+    <!-- <node pkg="roomba_500driver_meiji" name="roomba_500driver_meiji" type="main500"/> -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find chibi22_a)/config/rviz/localpathplanner.rviz"/>
 </launch>
